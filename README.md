@@ -7,230 +7,113 @@ Black** on Windows, macOS and Linux. Rhino Recorder works like g.tec's
 [Unicorn Recorder](https://github.com/unicorn-bi/Unicorn-Recorder-Hybrid-Black),
 but runs on [g.Pype](https://gpype.gtec.at) with the licence-free
 [gpype-rhino](https://github.com/itubrainlab/gpype-rhino) Bluetooth
-driver instead of g.tec's Windows-only Unicorn driver, and wears g.Pype's
-own dark theme.
+driver instead of g.tec's Windows-only Unicorn driver.
 
 ![Rhino Recorder](docs/screenshot.png)
 
+## Download
+
+Get the package for your system from the
+[latest release](https://github.com/itubrainlab/rhinorecorder/releases/latest):
+
+| System | Package | Install |
+|---|---|---|
+| Windows 10 or 11, 64-bit | `RhinoRecorder-<version>-windows-x86_64.zip` | Unpack it and double-click `install.cmd`; open Rhino Recorder from the Start menu. |
+| macOS 12 or later, Apple Silicon | `RhinoRecorder-<version>-arm64.dmg` | Drag **Rhino Recorder** to Applications. The first time, right-click it and choose **Open** (the app is not notarized). |
+| Linux x86_64, glibc 2.34+ (Ubuntu 22.04, Debian 12, Fedora 35 or later) | `RhinoRecorder-<version>-linux-x86_64.tar.gz` | Unpack it and run `./install.sh`; open Rhino Recorder from the applications menu or run `rhino-recorder`. |
+
+None needs administrator rights. **The first launch needs an internet
+connection:** the packages contain their own Python, Rhino Recorder and
+gpype-rhino, but not g.Pype, which g.tec's licence does not allow to be
+bundled. So the first launch downloads g.Pype and the other libraries
+from PyPI (several hundred MB, a few minutes), at the versions the
+release was tested with; later launches start directly. To remove Rhino
+Recorder, run `uninstall.cmd` (Windows) or `./uninstall.sh` (Linux),
+which keep your settings and recordings. On macOS, delete the app, and
+`~/Library/Application Support/RhinoRecorder/runtime` for the libraries.
+
+## Connecting the headset
+
+Pair the headset with the computer first, then start Rhino Recorder and
+choose it in the device list.
+
+- **Windows**: pair it in Settings → Bluetooth & devices. The device list
+  shows it with its COM port, e.g. `UN-2024.10.18 (COM5)`.
+- **macOS**: pair it in the Bluetooth settings. macOS asks once for
+  Bluetooth access.
+- **Linux**: pair it in the Bluetooth settings, or with `bluetoothctl`
+  (`scan on`, `pair <address>`, `trust <address>`). The device list
+  shows it by name.
+
+**Simulated device**, at the bottom of the list, runs without a headset.
+
 ## What it does
 
-As in Unicorn Recorder:
+- **Data viewer**: the eight EEG channels over a 10-second sweep, with
+  each channel's signal quality beside it and a TRIG row marking every
+  trigger in its own colour. **Scaling**, **Filter** (bandpass, highpass,
+  lowpass) and **Notch** (50/60 Hz, cascading) offer Unicorn Recorder's
+  predefined choices.
+- **Power spectrum** beside the viewer: 0–100 Hz, averaged across the
+  electrodes, with the δ, θ, α, β and γ bands shaded. It can be hidden.
+- **Filtered | Raw** switch on each view: the EEG after the filter, notch
+  and OSCAR, or as acquired.
+- **OSCAR** artifact removal (motion, cables, blinks) on the processed
+  EEG; raw recordings and streams stay raw.
+- **Recording** to four loggers, raw and processed, each as CSV and as
+  BDF+, with Unicorn Recorder's 19 channels in the same order (EEG 1–8,
+  ACC, GYR, CNT, BAT, VALID, DT, TRIG).
+- **Network**: a UDP trigger input into the TRIG channel; raw and
+  processed outputs over UDP and LSL.
+- **Status**: wireless data loss, network interfaces and battery.
 
-- Play/stop acquisition, record (which starts acquisition if needed),
-  settings, user manual.
-- Status icons for wireless data loss, network interfaces and battery,
-  and a disconnect button.
-- A 10-second sweeping data viewer for the eight EEG channels, with
-  amplitude **Scaling**, the same predefined **Filter** (bandpass,
-  highpass, lowpass) and **Notch** (50/60 Hz, cascading) choices, and
-  **OSCAR** artifact removal.
-- A trigger row with each trigger's value, and a tick across all channels,
-  coloured by trigger value.
-- Signal quality for each electrode, shown beside its channel's trace.
-- The same 19 channels in the same order (EEG 1–8, ACC, GYR, CNT, BAT,
-  VALID, DT, TRIG), each optional block switchable in the acquisition
-  settings.
-- Four loggers: raw and processed, each as CSV and as BDF+, each with its
-  own folder and prefix, files named `<prefix>_<YYYYMMDD>_<HHMMSS>`.
-- Trigger UDP input into the TRIG channel; raw and processed outputs
-  over UDP and LSL.
-- Device information.
-
-Python equivalents of Unicorn Recorder's examples are in
-[examples/](examples): a UDP trigger sender, a UDP receiver, an LSL
-receiver, and a file reader in place of the MATLAB import script.
+The user manual is in the app (the **?** button) and in
+[src/rhinorecorder/MANUAL.md](src/rhinorecorder/MANUAL.md).
+[examples/](examples) has Python equivalents of Unicorn Recorder's
+examples: a UDP trigger sender, a UDP receiver, an LSL receiver, and a
+CSV/BDF reader in place of the MATLAB import script.
 
 ### Differences from Unicorn Recorder
 
 | | Unicorn Recorder | Rhino Recorder |
 |---|---|---|
 | Platforms | Windows | Windows, macOS, Linux |
-| Driver | g.tec Unicorn driver | gpype-rhino (Bluetooth serial) |
+| Driver | g.tec Unicorn driver | gpype-rhino (Bluetooth) |
 | Test signal input, digital outputs, firmware version | yes | no: gpype-rhino does not implement these commands |
-| OSCAR | processed outputs only | all outputs, raw ones included (g.Pype runs OSCAR at the source); switching it restarts acquisition |
-| Default ports | trigger 1000, UDP outputs 1001 and 1002 | trigger 10000, UDP outputs 10001 and 10002: no administrator rights needed on any platform |
+| Power spectrum, raw view | no | yes |
+| OSCAR | processed outputs | processed outputs and filtered views; switching it restarts acquisition |
+| Default ports | trigger 1000, UDP outputs 1001 and 1002 | trigger 10000, UDP outputs 10001 and 10002: no administrator rights needed |
 | File and stream names | `UnicornRecorder…` | `RhinoRecorder…` (configurable) |
 | CSV | values only | a header row with the channel names |
-| Look | Unicorn branding, light work area | g.Pype's dark theme; a rhino pretending to be a unicorn as its icon |
-| Without a headset | none | a simulated headset (`--simulate`) |
+| Without a headset | none | a simulated headset |
 
-## Install
+## Running from source
 
-Rhino Recorder needs Python 3.10 or later and git. Python 3.12 is the
-safest choice: on Windows, pyedflib (for BDF files) has no prebuilt wheel
-for Python 3.13 and later.
+Rhino Recorder needs Python 3.10 or later (3.12 recommended: on Windows,
+pyedflib has no wheels for 3.13 and later) and git. In a clone of this
+repository:
 
 ```bash
 python -m venv .venv
-```
-
-Activate it (`.venv\Scripts\activate` on Windows,
-`source .venv/bin/activate` elsewhere), then:
-
-```bash
-pip install "rhinorecorder @ git+https://github.com/itubrainlab/rhinorecorder"
-```
-
-or, to work on it, from a clone of
-[itubrainlab/rhinorecorder](https://github.com/itubrainlab/rhinorecorder):
-
-```bash
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[test]"
-```
-
-This also installs g.Pype (with its GUI, LSL and file-format extras) from
-PyPI and gpype-rhino from GitHub.
-
-### Platform notes
-
-- **Windows**: pair the headset in Bluetooth settings; it appears as a
-  COM port.
-- **macOS**: pair the headset in Bluetooth settings. gpype-rhino builds
-  its RhinoConnect helper on first use, which needs the Xcode command
-  line tools (`xcode-select --install`). macOS asks once for Bluetooth
-  access.
-- **Linux**: pair the headset (in Bluetooth settings, or with
-  `bluetoothctl`: `scan on`, `pair <address>`, `trust <address>`).
-  gpype-rhino finds it by name among BlueZ's paired devices and connects
-  over an RFCOMM socket, so no `rfcomm bind`, root or `dialout` group is
-  needed. Qt needs the usual X11/Wayland libraries (on Debian/Ubuntu,
-  `libxcb-cursor0` among them).
-
-## macOS app
-
-`packaging/macos/build_app.sh` builds **Rhino Recorder.app** and a DMG in
-`dist/`:
-
-```bash
-packaging/macos/build_app.sh
-```
-
-It needs the Xcode command line tools, uv, git and this project's
-`.venv`. The app contains its own Python, Rhino Recorder, gpype-rhino and
-a prebuilt RhinoConnect helper, so its users need neither Python nor
-Xcode. It does **not** contain g.Pype: the GNCL forbids redistributing
-g.Pype as a standalone executable or bundled artefact. Instead, the first
-launch installs g.Pype and the other libraries from PyPI, at the versions
-the tests ran with, into `~/Library/Application Support/RhinoRecorder`.
-That needs an internet connection and takes a few minutes; later
-launches start directly, and an updated app sets itself up again once.
-
-The app is built for the architecture of the Python it bundles (Apple
-Silicon here; build on an Intel Mac, or set `PYTHON_HOME` to an x86_64
-CPython 3.12, for Intel). It is signed ad hoc only: on another Mac,
-open it the first time with right-click → Open, or sign and notarize it
-with a Developer ID to avoid the Gatekeeper warning.
-
-## Linux package
-
-`packaging/linux/build_linux.sh` builds
-`dist/RhinoRecorder-<version>-linux-x86_64.tar.gz` (it runs on macOS or
-Linux):
-
-```bash
-packaging/linux/build_linux.sh
-```
-
-Like the macOS app, it contains its own Python, Rhino Recorder and
-gpype-rhino but not g.Pype, which the first launch installs from PyPI at
-the tested versions, into `~/.local/share/RhinoRecorder`. Users unpack
-it and run `./install.sh`: no administrator rights, a menu entry with
-the icon, and a `rhino-recorder` command; `./uninstall.sh` removes it.
-Its [README](packaging/linux/README.txt) covers pairing the headset.
-
-It is for x86_64 only, with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
-Fedora 35 or later): g.Pype publishes no ARM Linux build, and PySide6's
-Linux wheels need glibc 2.34.
-
-## Windows package
-
-`packaging/windows/build_windows.sh` builds
-`dist/RhinoRecorder-<version>-windows-x86_64.zip` (it runs on macOS or
-Linux):
-
-```bash
-packaging/windows/build_windows.sh
-```
-
-Like the others, it contains its own Python, Rhino Recorder and
-gpype-rhino but not g.Pype, which the first launch installs from PyPI at
-the tested versions, into `%LOCALAPPDATA%\RhinoRecorder`. Users unpack
-it and double-click `install.cmd`: no administrator rights, and a Start
-menu entry with the icon; `uninstall.cmd` removes it. Its
-[README](packaging/windows/README.txt) covers the headset's COM port.
-
-## Building all three
-
-The [Build packages](.github/workflows/build.yml) workflow builds the
-three packages on GitHub Actions (the macOS app on a macOS runner),
-installs each on its own platform and runs
-[packaging/smoke_test.py](packaging/smoke_test.py) with the package's
-own Python: it opens the window and records from the simulated headset.
-Run it from the Actions tab. To release, write the notes in
-`docs/releases/v<version>.md`, set `__version__` in
-`src/rhinorecorder/__init__.py`, commit, and push a `v<version>` tag: the
-workflow publishes the release with the three packages and `SHA256SUMS`
-once all of them pass.
-
-## Run
-
-```bash
 rhino-recorder
 ```
 
-That opens the device list. To skip it:
+This installs g.Pype (with its GUI, LSL and file-format extras) from PyPI
+and gpype-rhino from GitHub. On macOS, gpype-rhino builds its
+RhinoConnect Bluetooth helper on first use, which needs the Xcode
+command line tools (`xcode-select --install`). On Linux, Qt needs the
+usual desktop libraries (on Debian/Ubuntu, `libxcb-cursor0` among them).
 
-```bash
-rhino-recorder --device UN-2024.08.41
-```
+| Option | |
+|---|---|
+| `--device NAME` | open this headset, e.g. `UN-2024.08.41`, without the device list |
+| `--port PORT` | its serial port, e.g. `COM5`, where the name does not find it |
+| `--simulate` | use the simulated headset |
+| `--version` | print the version |
 
-```bash
-rhino-recorder --simulate
-```
-
-The full user manual is in the app (the **?** button) and in
-[src/rhinorecorder/MANUAL.md](src/rhinorecorder/MANUAL.md).
-
-## Licence
-
-Rhino Recorder is MIT licensed; see [LICENSE](LICENSE).
-
-It runs on g.Pype, which is under the **g.tec Non-Commercial License
-(GNCL)**: free for private and educational use (academic research,
-teaching) together with a g.tec amplifier, which the Unicorn Hybrid Black
-is. Read the GNCL before you use Rhino Recorder. In particular:
-
-- Commercial use needs a commercial g.Pype licence from g.tec.
-- The GNCL forbids redistributing g.Pype as a standalone executable or
-  other bundled artefact, and g.Pype refuses to run a frozen (e.g.
-  PyInstaller) application without an attested g.tec device. So Rhino
-  Recorder is distributed as a Python package that installs g.Pype from
-  PyPI, not as an executable bundle.
-- Without a g.Pype licence, g.Pype marks its own output as
-  non-commercial. Rhino Recorder writes its files and streams with its
-  own nodes, which carry no such mark; the status bar shows when g.Pype
-  runs unlicensed. That does not change what the GNCL allows.
-
-## How it works
-
-```text
-RhinoHybridBlack ─┐                          ┌─ status tap (battery, data loss, signal quality)
-UDPReceiver ──────┴─ Router ─ UnicornLayout ─┼─ Router (selected channels) ─ raw CSV / BDF / UDP / LSL
-                                             └─ Filter ─ Notch ─┬─ scope tap
-                                                                └─ Router ─ processed CSV / BDF / UDP / LSL
-```
-
-- `recorder.py` builds and runs the g.Pype pipeline, with no UI code, so
-  it can be scripted and tested.
-- `nodes.py` holds Rhino Recorder's own g.Pype nodes: the Unicorn channel
-  layout, filters that can be swapped while running, loggers that start
-  and stop at a shared sample while acquisition runs, the UDP text
-  output, and buffers for the display.
-- `simulator.py` simulates the headset at the byte level, so the
-  simulated device runs the real gpype-rhino decoder.
-- `ui/` is the PySide6/pyqtgraph interface.
-
-## Tests
+### Tests
 
 The tests need no headset: they run against the simulated one, through
 the real driver, pipeline, files and sockets.
@@ -238,3 +121,80 @@ the real driver, pipeline, files and sockets.
 ```bash
 pytest
 ```
+
+### How it works
+
+```text
+                              ┌─ UnicornLayout (raw) ─┬─ status tap (quality, raw views)
+HeadsetSource ─┐              │                       └─ raw CSV / BDF / UDP / LSL
+UDPReceiver ───┴─ Router ─────┤
+                              └─ UnicornLayout ─ Filter ─ Notch ─┬─ scope tap (filtered views)
+                                                                 └─ processed CSV / BDF / UDP / LSL
+```
+
+g.Pype runs OSCAR inside the source, so every output would get OSCAR's
+EEG. Rhino Recorder's source copies the raw EEG in front of OSCAR; the
+copy rides through OSCAR untouched and in the same rows, and the raw
+layout takes its EEG from it.
+
+- `recorder.py` builds and runs the pipeline, with no UI code, so it can
+  be scripted and tested.
+- `sources.py` holds the headset's sources, real and simulated, with the
+  raw EEG copy.
+- `nodes.py` holds Rhino Recorder's g.Pype nodes: the raw EEG copy, the
+  Unicorn channel layout, filters that can be swapped while running,
+  loggers that start and stop at a shared sample, the UDP and LSL
+  outputs, and buffers for the display.
+- `spectrum.py` computes the power spectrum (Welch's estimate, averaged
+  across the electrodes).
+- `simulator.py` simulates the headset at the byte level, so the
+  simulated device runs the real gpype-rhino decoder.
+- `ui/` is the PySide6/pyqtgraph interface.
+
+### Packages and releases
+
+`packaging/` builds the three packages; each runs on macOS (and the Linux
+and Windows ones on Linux) and needs uv, git and the project's `.venv`:
+
+```bash
+packaging/macos/build_app.sh          # dist/RhinoRecorder-<version>-<arch>.dmg (macOS only)
+packaging/linux/build_linux.sh        # dist/RhinoRecorder-<version>-linux-x86_64.tar.gz
+packaging/windows/build_windows.sh    # dist/RhinoRecorder-<version>-windows-x86_64.zip
+```
+
+Each package pins the library versions installed in the `.venv`, which
+its first launch then installs. The macOS app is built for the
+architecture of the Python it bundles (set `PYTHON_HOME` to an x86_64
+CPython 3.12 for Intel Macs) and signed ad hoc only.
+
+The [Build packages](.github/workflows/build.yml) workflow builds all
+three on GitHub Actions, installs each on its own platform and runs
+[packaging/smoke_test.py](packaging/smoke_test.py) with the package's
+own Python. To release:
+
+1. write the notes in `docs/releases/v<version>.md`;
+2. set `__version__` in `src/rhinorecorder/__init__.py` and commit;
+3. push a `v<version>` tag.
+
+The workflow publishes the release, with the three packages and
+`SHA256SUMS`, once all of them pass. It checks the packages on the
+simulated headset only, so try a release candidate with a real headset
+first.
+
+## Licence
+
+Rhino Recorder is MIT licensed; see [LICENSE](LICENSE).
+
+It runs on g.Pype, which is under the **g.tec Non-Commercial License
+(GNCL)**: free for private and educational use (academic research,
+teaching) with a g.tec amplifier, which the Unicorn Hybrid Black is. Read
+the GNCL before you use Rhino Recorder. In particular:
+
+- Commercial use needs a commercial g.Pype licence from g.tec.
+- The GNCL forbids redistributing g.Pype as a standalone executable or
+  other bundled artefact. That is why the packages install g.Pype from
+  PyPI on first launch instead of containing it.
+- Without a g.Pype licence, g.Pype marks its own output as
+  non-commercial. Rhino Recorder writes its files and streams with its
+  own nodes, which carry no such mark; the status bar shows when g.Pype
+  runs unlicensed. That does not change what the GNCL allows.
