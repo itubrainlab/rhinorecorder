@@ -90,6 +90,31 @@ PyPI and gpype_rhino from GitHub.
   You may need to add yourself to the `dialout` group. Qt needs the usual
   X11/Wayland libraries (on Debian/Ubuntu, `libxcb-cursor0` among them).
 
+## macOS app
+
+`packaging/macos/build_app.sh` builds **Rhino Recorder.app** and a DMG in
+`dist/`:
+
+```bash
+packaging/macos/build_app.sh
+```
+
+It needs the Xcode command line tools, uv, git and this project's
+`.venv`. The app contains its own Python, Rhino Recorder, gpype_rhino and
+a prebuilt RhinoConnect helper, so its users need neither Python nor
+Xcode. It does **not** contain g.Pype: the GNCL forbids redistributing
+g.Pype as a standalone executable or bundled artefact. Instead, the first
+launch installs g.Pype and the other libraries from PyPI, at the versions
+the tests ran with, into `~/Library/Application Support/RhinoRecorder`.
+That needs an internet connection and takes a few minutes; later
+launches start directly, and an updated app sets itself up again once.
+
+The app is built for the architecture of the Python it bundles (Apple
+Silicon here; build on an Intel Mac, or set `PYTHON_HOME` to an x86_64
+CPython 3.12, for Intel). It is signed ad hoc only: on another Mac,
+open it the first time with right-click → Open, or sign and notarize it
+with a Developer ID to avoid the Gatekeeper warning.
+
 ## Run
 
 ```bash
