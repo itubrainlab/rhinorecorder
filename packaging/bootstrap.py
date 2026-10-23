@@ -1,4 +1,4 @@
-"""First-launch setup of the Rhino Recorder app (macOS and Linux).
+"""First-launch setup of the Rhino Recorder app (macOS, Linux and Windows).
 
     bootstrap.py <app resources folder> <library folder>
 
@@ -22,7 +22,10 @@ RES = Path(sys.argv[1])
 LIB = Path(sys.argv[2])
 RUNTIME = LIB.parent
 LOG = RUNTIME / "setup.log"
-PYTHON = RES / "python" / "bin" / "python3"
+PYTHON = (RES / "python" / "python.exe" if sys.platform == "win32"
+          else RES / "python" / "bin" / "python3")
+#: pip runs in the background: no console window on Windows.
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
 def pip(log, *args) -> None:
@@ -32,7 +35,8 @@ def pip(log, *args) -> None:
     log.write(f"$ {' '.join(command)}\n")
     log.flush()
     process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, text=True)
+                               stderr=subprocess.STDOUT, encoding="utf-8",
+                               errors="replace", creationflags=NO_WINDOW)
     for line in process.stdout:
         log.write(line)
         log.flush()
@@ -44,7 +48,7 @@ def pip(log, *args) -> None:
 def install(report) -> None:
     RUNTIME.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(LIB, ignore_errors=True)
-    with open(LOG, "w") as log:
+    with open(LOG, "w", encoding="utf-8") as log:
         report("Downloading g.Pype and the libraries Rhino Recorder needs "
                "(first launch only)...")
         for line in pip(log, "-r", str(RES / "requirements.txt")):
@@ -72,10 +76,12 @@ def install_in_terminal() -> int:
         subprocess.run([notify, "Rhino Recorder", "Setting up on first "
                         "launch; this takes a few minutes."], check=False)
     try:
-        install(lambda text: print(text, flush=True))
+        # pythonw.exe (Windows) has no console to print to.
+        install(lambda text: sys.stdout and print(text, flush=True))
         return 0
     except Exception as error:  # noqa: BLE001
-        print(f"Setup failed: {error}. See {LOG}", file=sys.stderr)
+        if sys.stderr:
+            print(f"Setup failed: {error}. See {LOG}", file=sys.stderr)
         if notify:
             subprocess.run([notify, "Rhino Recorder",
                             f"Setup failed. See {LOG}"], check=False)

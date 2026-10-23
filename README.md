@@ -142,6 +142,33 @@ It is for x86_64 only, with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
 Fedora 35 or later): g.Pype publishes no ARM Linux build, and PySide6's
 Linux wheels need glibc 2.34.
 
+## Windows package
+
+`packaging/windows/build_windows.sh` builds
+`dist/RhinoRecorder-<version>-windows-x86_64.zip` (it runs on macOS or
+Linux):
+
+```bash
+packaging/windows/build_windows.sh
+```
+
+Like the others, it contains its own Python, Rhino Recorder and
+gpype-rhino but not g.Pype, which the first launch installs from PyPI at
+the tested versions, into `%LOCALAPPDATA%\RhinoRecorder`. Users unpack
+it and double-click `install.cmd`: no administrator rights, and a Start
+menu entry with the icon; `uninstall.cmd` removes it. Its
+[README](packaging/windows/README.txt) covers the headset's COM port.
+
+## Building all three
+
+The [Build packages](.github/workflows/build.yml) workflow builds the
+three packages on GitHub Actions (the macOS app on a macOS runner),
+installs each on its own platform and runs
+[packaging/smoke_test.py](packaging/smoke_test.py) with the package's
+own Python: it opens the window and records from the simulated headset.
+Run it from the Actions tab, or push a `v*` tag to attach the packages
+to that release.
+
 ## Run
 
 ```bash
