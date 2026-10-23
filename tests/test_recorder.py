@@ -99,6 +99,35 @@ def test_record_writes_aligned_csv_and_bdf(recorder, settings):
         reader.close()
 
 
+def test_oscar_cleans_only_the_processed_recording(settings):
+    """With OSCAR on, the raw files are raw: OSCAR removes the electrodes'
+    offsets from the processed EEG only, in the same rows."""
+    settings.display.oscar = True
+    recorder = Recorder(settings, simulate=True)
+    errors = []
+    recorder.on_error = errors.append
+    try:
+        recorder.start()
+        paths = recorder.start_recording()
+        time.sleep(5.5)              # recordings begin once OSCAR settles
+        recorder.stop_recording()
+    finally:
+        recorder.stop()
+    assert errors == []
+
+    csvs = sorted(p for p in paths if p.endswith(".csv"))
+    raw = next(read_csv(p) for p in csvs if "RawData" in p)
+    processed = next(read_csv(p) for p in csvs if "RawData" not in p)
+    for _, header, data in (raw, processed):
+        assert header == layout.LABELS     # the raw copy is not a column
+        assert len(data) > layout.SAMPLING_RATE
+    raw, processed = raw[2], processed[2]
+    np.testing.assert_array_equal(raw[:, layout.CNT],
+                                  processed[:, layout.CNT])
+    assert np.abs(raw[:, :8].mean(0)).min() > 1000
+    assert np.abs(processed[:, :8].mean(0)).max() < 100
+
+
 def test_record_button_starts_acquisition_too(recorder):
     recorder.start(record=True)
     assert recorder.running and recorder.recording

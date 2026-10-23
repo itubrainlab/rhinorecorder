@@ -73,6 +73,9 @@ RHINO_COLUMNS = {
     "BAT": 14, "CNT": 15, "VALID": 16,
 }
 RHINO_WIDTH = 17
+#: Columns of the raw EEG's copy, right after the scan, which the source
+#: adds when OSCAR runs (see :class:`rhinorecorder.nodes.RawEegCopy`).
+RHINO_RAW_EEG = list(range(RHINO_WIDTH, RHINO_WIDTH + NUM_EEG))
 
 
 def selected(groups: dict[str, bool]) -> list[int]:

@@ -52,9 +52,57 @@ def describe(context: dict, indices: list[int]) -> None:
         context.pop(key, None)
 
 
+class RawEegCopy(gp.IONode):
+    """Copies of the EEG channels, added as auxiliary channels after the
+    scan (ahead of the arrival stamp g.Pype's Sync reads).
+
+    g.Pype runs OSCAR inside the source's chain, so everything downstream
+    gets OSCAR's EEG. Placed in front of OSCAR (see
+    :mod:`rhinorecorder.sources`), the copies pass through OSCAR
+    untouched, as auxiliary channels do, and delayed together with its
+    output: the raw EEG and OSCAR's leave the source in the same rows.
+    """
+
+    def setup(self, data, port_context_in):
+        roles = list(port_context_in[PORT_IN][Keys.CHANNEL_ROLES])
+        self._eeg = [i for i, role in enumerate(roles)
+                     if role == layout.SIGNAL]
+        stamp = Constants.ChannelRoles.TIMESTAMP
+        self._at = roles.index(stamp) if stamp in roles else len(roles)
+        out = super().setup(data, port_context_in)
+        copies = len(self._eeg)
+        for context in out.values():
+            for key in (Keys.CHANNEL_ROLES, Keys.CHANNEL_LABELS,
+                        Keys.CHANNEL_UNITS):
+                values = context.get(key)
+                if values is None or len(values) != len(roles):
+                    continue
+                values = list(values)
+                added = {Keys.CHANNEL_ROLES: layout.AUXILIARY,
+                         Keys.CHANNEL_UNITS: "uV"}.get(key)
+                context[key] = (values[:self._at]
+                                + [added or f"RAW {i + 1}"
+                                   for i in range(copies)]
+                                + values[self._at:])
+            context[Keys.CHANNEL_COUNT] = len(roles) + copies
+            for key in _PER_CHANNEL_KEYS:
+                context.pop(key, None)
+        return out
+
+    def step(self, data):
+        block = data[PORT_IN]
+        return {PORT_OUT: np.concatenate(
+            [block[:, :self._at], block[:, self._eeg], block[:, self._at:]],
+            axis=1)}
+
+
 class UnicornLayout(gp.IONode):
     """gpype-rhino's scan, plus an optional trigger channel, in Unicorn
     Recorder's channel order (see :mod:`rhinorecorder.layout`).
+
+    With ``raw``, the EEG comes from the raw copy the source adds when
+    OSCAR runs (:class:`RawEegCopy`), and otherwise from the scan's EEG,
+    which is OSCAR's output when it runs.
 
     DT is the time between this sample's arrival and the previous one's,
     in milliseconds; with a frame size of 1 that is per sample, as in
@@ -62,11 +110,12 @@ class UnicornLayout(gp.IONode):
     it arrived and zero elsewhere.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, raw: bool = False, **kwargs):
         super().__init__(**kwargs)
-        self._columns = np.array(
-            [layout.RHINO_COLUMNS[c.label] for c in layout.CHANNELS
-             if c.label in layout.RHINO_COLUMNS])
+        self.raw = raw
+        #: Source column of each layout channel the scan fills; set up
+        #: once the source's channels are known.
+        self._columns: Optional[np.ndarray] = None
         self._targets = np.array(
             [i for i, c in enumerate(layout.CHANNELS)
              if c.label in layout.RHINO_COLUMNS])
@@ -85,6 +134,12 @@ class UnicornLayout(gp.IONode):
                 f"{width}.")
         self._trigger = (roles.index(layout.TRIGGER)
                          if layout.TRIGGER in roles else None)
+        scan = width - (self._trigger is not None)
+        self._columns = np.array(
+            [layout.RHINO_COLUMNS[c.label] for c in layout.CHANNELS
+             if c.label in layout.RHINO_COLUMNS])
+        if self.raw and scan >= layout.RHINO_RAW_EEG[-1] + 1:
+            self._columns[layout.EEG] = layout.RHINO_RAW_EEG
         self._last_arrival = None
         self._last_trigger = 0.0
         out = super().setup(data, port_context_in)

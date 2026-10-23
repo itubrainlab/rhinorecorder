@@ -4,13 +4,17 @@ from tests and scripts as well as from the window.
 
 The pipeline::
 
-    RhinoHybridBlack ─┐                      ┌─ status tap (battery, loss, quality)
-    UDPReceiver ──────┴─ Router ─ UnicornLayout ─┼─ Router (selected channels) ─ raw CSV / BDF / UDP / LSL
-                                             └─ Filter ─ Notch ─┬─ scope tap
-                                                                └─ Router ─ processed CSV / BDF / UDP / LSL
+                                ┌─ UnicornLayout (raw) ─┬─ status tap (battery, loss, quality, raw views)
+    HeadsetSource ─┐            │                       └─ Router (selected channels) ─ raw CSV / BDF / UDP / LSL
+    UDPReceiver ───┴─ Router ───┤
+                                └─ UnicornLayout ─ Filter ─ Notch ─┬─ scope tap (filtered views)
+                                                                   └─ Router ─ processed CSV / BDF / UDP / LSL
 
 Only the parts the settings enable are built. With OSCAR on, g.Pype runs
-it inside the source's chain, ahead of everything shown here.
+it inside the source's chain, and the source also emits a copy of the raw
+EEG from in front of OSCAR (see :mod:`rhinorecorder.sources`): the raw
+layout takes its EEG from that copy, so only the processed branch carries
+OSCAR, as in Unicorn Recorder.
 """
 from __future__ import annotations
 
@@ -61,14 +65,13 @@ def make_source(settings: Settings, simulate: bool, oscar: bool):
     """The headset's g.Pype source, real or simulated."""
     common = dict(include_accel=True, include_gyro=True, include_aux=True,
                   frame_size=FRAME_SIZE, enable_oscar=oscar, name="rhino")
+    from .sources import HeadsetSource, SimulatedSource
     if simulate:
-        from .simulator import SimulatedHybridBlack
-        return SimulatedHybridBlack(**common)
-    from gprhino import RhinoHybridBlack
-    return RhinoHybridBlack(serial=settings.device.serial or None,
-                            port=settings.device.port or None,
-                            transport=settings.device.transport or "auto",
-                            **common)
+        return SimulatedSource(**common)
+    return HeadsetSource(serial=settings.device.serial or None,
+                         port=settings.device.port or None,
+                         transport=settings.device.transport or "auto",
+                         **common)
 
 
 def _selector(indices: list[int]):
@@ -84,7 +87,7 @@ def build(settings: Settings, simulate: bool = False) -> Graph:
     net = settings.network
     p = gp.Pipeline()
     source = make_source(settings, simulate, display.oscar)
-    arranged = UnicornLayout(name="layout")
+    upstream = source
     if net.trigger_in.enabled:
         trigger = gp.UDPReceiver(
             ip=trigger_bind_address(net.trigger_in.ip, net.trigger_in.port),
@@ -93,12 +96,15 @@ def build(settings: Settings, simulate: bool = False) -> Graph:
                           name="merge")
         p.connect(source, merge["in1"])
         p.connect(trigger, merge["in2"])
-        p.connect(merge, arranged)
-    else:
-        p.connect(source, arranged)
+        upstream = merge
+    # The same rows, with the raw EEG or with OSCAR's (the same when off).
+    raw = UnicornLayout(raw=True, name="raw_layout")
+    arranged = UnicornLayout(name="layout")
+    p.connect(upstream, raw)
+    p.connect(upstream, arranged)
 
     status = SweepTap(seconds=10, name="status")
-    p.connect(arranged, status)
+    p.connect(raw, status)
 
     settle = OSCAR_WARMUP if display.oscar else 0
     bandpass = EegFilter(presets.filter_sos(display.filter), settle=settle,
@@ -113,7 +119,7 @@ def build(settings: Settings, simulate: bool = False) -> Graph:
     graph = Graph(p, source, bandpass, notch, scope, status)
     channels = layout.selected(settings.acquisition.groups())
     rec = settings.recording
-    for kind, upstream in (("raw", arranged), ("processed", notch)):
+    for kind, upstream in (("raw", raw), ("processed", notch)):
         sinks = []
         for fmt, cls in (("csv", CsvLogger), ("bdf", BdfLogger)):
             cfg = rec.loggers()[f"{kind}_{fmt}"]
