@@ -73,7 +73,14 @@ processed outputs, and can be changed while recording.
 ## Data viewer
 
 Shows the eight EEG channels over 10 seconds, sweeping from left to right.
-The blue line is the newest sample; red dashed lines mark triggers.
+The blue line is the newest sample.
+
+Below the channels, the **TRIG** row shows every trigger as a marker with
+its value, and a tick in the same colour crosses all channels at that
+moment. Each trigger value has its own colour, the same every time, so
+recurring events are easy to spot. Labels of triggers close together are
+staggered on two lines. Two triggers within one sample (4 ms) cannot be
+told apart: only the first is kept.
 
 ## Signal quality
 

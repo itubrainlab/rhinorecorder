@@ -24,6 +24,8 @@ As in Unicorn Recorder:
   amplitude **Scaling**, the same predefined **Filter** (bandpass,
   highpass, lowpass) and **Notch** (50/60 Hz, cascading) choices, and
   **OSCAR** artifact removal.
+- A trigger row with each trigger's value, and a tick across all channels,
+  coloured by trigger value.
 - Signal quality for each electrode, shown beside its channel's trace.
 - The same 19 channels in the same order (EEG 1–8, ACC, GYR, CNT, BAT,
   VALID, DT, TRIGGER), each optional block switchable in the acquisition

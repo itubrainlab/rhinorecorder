@@ -89,3 +89,40 @@ def test_play_record_stop(app, settings, monkeypatch):
         assert window.stack.currentIndex() == 0
     finally:
         window.close()
+
+
+def test_trigger_colours_are_stable_and_distinct():
+    from rhino_recorder.ui.scope import trigger_colour
+
+    colours = [trigger_colour(v).name() for v in range(1, 11)]
+    assert len(set(colours)) == 10
+    assert trigger_colour(3).name() == trigger_colour(3.0).name()
+
+
+def test_trigger_row(app):
+    import numpy as np
+
+    from rhino_recorder.ui.scope import TRIGGER_ROW, Scope, trigger_colour
+
+    scope = Scope()
+    scope.resize(1000, 600)
+    scope.show_triggers(np.array([1.0, 2.0, 2.01, 5.0]),
+                        np.array([3, 7, 99, 3]))
+    # One tick and marker item per value, in that value's colour.
+    assert set(scope._trigger_items) == {3, 7, 99}
+    ticks, _ = scope._trigger_items[3]
+    assert ticks.opts["pen"].color().rgb() == trigger_colour(3).rgb()
+    xs, ys = ticks.getData()
+    assert list(xs[::3]) == [1.0, 5.0]
+    assert list(ys[:2]) == [0.0, float(scope.channels)]
+    # A label per trigger; the two close ones on different lines.
+    labels = [label for label in scope._trigger_labels if label.isVisible()]
+    assert [label.toPlainText() for label in labels] == ["3", "7", "99", "3"]
+    heights = [label.pos().y() for label in labels]
+    assert heights[1] != heights[2]
+    assert all(-TRIGGER_ROW < h < 0 for h in heights)
+    # Clearing hides them all.
+    scope.show_triggers([], [])
+    assert not any(label.isVisible() for label in scope._trigger_labels)
+    cleared = scope._trigger_items[3][0].getData()[0]
+    assert cleared is None or len(cleared) == 0
