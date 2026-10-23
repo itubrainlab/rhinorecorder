@@ -44,6 +44,9 @@ def main(argv=None) -> int:
 
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
+    # Matches the installed rhino-recorder.desktop, for the taskbar icon
+    # on Linux desktops.
+    app.setDesktopFileName("rhino-recorder")
     app.setApplicationDisplayName("Rhino Recorder")
     theme.apply(app)
 

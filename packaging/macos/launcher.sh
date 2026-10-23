@@ -23,6 +23,7 @@ fi
 exec "$PYTHON" -I -B -c '
 import sys
 sys.path.insert(0, sys.argv.pop(1))
+sys.argv[0] = "rhino-recorder"
 from rhino_recorder.app import main
 sys.exit(main())
 ' "$LIB" "$@"

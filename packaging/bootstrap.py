@@ -1,11 +1,12 @@
-"""First-launch setup of Rhino Recorder.app.
+"""First-launch setup of the Rhino Recorder app (macOS and Linux).
 
-    bootstrap.py <Resources> <library folder>
+    bootstrap.py <app resources folder> <library folder>
 
 Installs the pinned libraries (requirements.txt: g.Pype, PySide6, ...)
 from PyPI, then the bundled RhinoRecorder and gpype_rhino wheels, into
-the library folder, and puts the prebuilt RhinoConnect helper where
-gpype_rhino looks for it. A small window shows progress. The folder is
+the library folder, and on macOS puts the prebuilt RhinoConnect helper
+where gpype_rhino looks for it. A small window shows progress; without a
+display, progress goes to the terminal. The folder is
 named after the build, so an updated app sets up a fresh one; older
 ones are removed once the new one is complete.
 """
@@ -63,19 +64,32 @@ def install(report) -> None:
             shutil.rmtree(old, ignore_errors=True)
 
 
+def install_in_terminal() -> int:
+    """Set up without a window, reporting to the terminal and, where
+    there is one, to the desktop's notifications."""
+    notify = shutil.which("notify-send")
+    if notify:
+        subprocess.run([notify, "Rhino Recorder", "Setting up on first "
+                        "launch; this takes a few minutes."], check=False)
+    try:
+        install(lambda text: print(text, flush=True))
+        return 0
+    except Exception as error:  # noqa: BLE001
+        print(f"Setup failed: {error}. See {LOG}", file=sys.stderr)
+        if notify:
+            subprocess.run([notify, "Rhino Recorder",
+                            f"Setup failed. See {LOG}"], check=False)
+        return 1
+
+
 def main() -> int:
     try:
         import tkinter as tk
         from tkinter import messagebox, ttk
-    except ImportError:  # no window: install quietly
-        try:
-            install(lambda text: None)
-            return 0
-        except Exception as error:  # noqa: BLE001
-            print(f"Setup failed: {error}. See {LOG}", file=sys.stderr)
-            return 1
+        root = tk.Tk()
+    except Exception:  # no Tk, or no display
+        return install_in_terminal()
 
-    root = tk.Tk()
     root.title("Rhino Recorder")
     root.resizable(False, False)
     frame = ttk.Frame(root, padding=20)

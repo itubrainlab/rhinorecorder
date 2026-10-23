@@ -115,6 +115,29 @@ CPython 3.12, for Intel). It is signed ad hoc only: on another Mac,
 open it the first time with right-click → Open, or sign and notarize it
 with a Developer ID to avoid the Gatekeeper warning.
 
+## Linux package
+
+`packaging/linux/build_linux.sh` builds
+`dist/RhinoRecorder-<version>-linux-x86_64.tar.gz` (it runs on macOS or
+Linux):
+
+```bash
+packaging/linux/build_linux.sh
+```
+
+Like the macOS app, it contains its own Python, Rhino Recorder and
+gpype_rhino but not g.Pype, which the first launch installs from PyPI at
+the tested versions, into `~/.local/share/RhinoRecorder`. Users unpack
+it and run `./install.sh`: no administrator rights, a menu entry with
+the icon, and a `rhino-recorder` command; `./uninstall.sh` removes it.
+Its [README](packaging/linux/README.txt) covers rfcomm and the dialout
+group.
+
+It is for x86_64 only, with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
+Fedora 35 or later): g.Pype publishes no ARM Linux build, and PySide6's
+Linux wheels need glibc 2.34. The default trigger port, 1000, needs root
+on Linux; choose one from 1024 up there.
+
 ## Run
 
 ```bash

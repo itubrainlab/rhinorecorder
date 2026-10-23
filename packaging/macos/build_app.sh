@@ -81,7 +81,7 @@ rm -rf "$RES/python/include" "$RES/python/share" \
 "$RES/python/bin/python3" -I -m compileall -q -j 0 "$RES/python/lib" >/dev/null || true
 cp "$WORK"/wheels/*.whl "$RES/wheels/"
 cp "$WORK/requirements.txt" "$RES/requirements.txt"
-cp "$HERE/bootstrap.py" "$RES/bootstrap.py"
+cp "$HERE/../bootstrap.py" "$RES/bootstrap.py"
 cp "$ROOT/LICENSE" "$RES/LICENSE"
 echo "$BUILD_ID" > "$RES/build-id"
 sh "$WORK/gpype_rhino/src/gpype_rhino/macos/build.sh" "$RES" >/dev/null
