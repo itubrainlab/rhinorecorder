@@ -166,8 +166,11 @@ three packages on GitHub Actions (the macOS app on a macOS runner),
 installs each on its own platform and runs
 [packaging/smoke_test.py](packaging/smoke_test.py) with the package's
 own Python: it opens the window and records from the simulated headset.
-Run it from the Actions tab, or push a `v*` tag to attach the packages
-to that release.
+Run it from the Actions tab. To release, write the notes in
+`docs/releases/v<version>.md`, set `__version__` in
+`src/rhinorecorder/__init__.py`, commit, and push a `v<version>` tag: the
+workflow publishes the release with the three packages and `SHA256SUMS`
+once all of them pass.
 
 ## Run
 

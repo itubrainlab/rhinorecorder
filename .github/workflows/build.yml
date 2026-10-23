@@ -1,6 +1,8 @@
 # Build the macOS, Linux and Windows packages, install each on its own
-# platform and check it on the simulated headset. A pushed v* tag also
-# attaches them to that release (a draft one is made if there is none).
+# platform and check it on the simulated headset. A pushed v* tag then
+# publishes them as that release, with docs/releases/<tag>.md as its notes
+# (GitHub's generated notes if there is none); a release that already
+# exists gets the packages attached instead.
 name: Build packages
 
 on:
@@ -124,19 +126,26 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - name: Upload
+      - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
+          NOTES="docs/releases/$TAG.md"
           cd dist
           sha256sum RhinoRecorder-* > SHA256SUMS
           cat SHA256SUMS
-          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft \
-              --title "Rhino Recorder ${TAG#v}" --notes ""
-          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber RhinoRecorder-* SHA256SUMS
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" --clobber RhinoRecorder-* SHA256SUMS
+          elif [ -f "../$NOTES" ]; then
+            gh release create "$TAG" --verify-tag --title "Rhino Recorder ${TAG#v}" \
+              --notes-file "../$NOTES" RhinoRecorder-* SHA256SUMS
+          else
+            gh release create "$TAG" --verify-tag --title "Rhino Recorder ${TAG#v}" \
+              --generate-notes RhinoRecorder-* SHA256SUMS
+          fi
