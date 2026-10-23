@@ -37,12 +37,24 @@ def paired_devices() -> list[tuple[str, str, str]]:
             found += [(name, name, "") for name in find_headsets()]
         except Exception:  # noqa: BLE001
             pass
+    elif sys.platform == "win32":
+        # Bluetooth COM ports, labelled with the headset paired on each.
+        try:
+            from gprhino import windows_bluetooth_ports
+            for port, _, name in windows_bluetooth_ports():
+                if not name or name.upper().startswith("UN-"):
+                    found.append((f"{name} ({port})" if name else port,
+                                  name, port))
+        except Exception:  # noqa: BLE001
+            pass
     try:
         from gprhino import find_ports
         ports = find_ports()
     except Exception:  # noqa: BLE001
         return found
     for port in ports:
+        if any(port == listed for _, _, listed in found):
+            continue
         name = port.rsplit("/", 1)[-1]
         for prefix in ("cu.", "tty."):
             if name.startswith(prefix):
@@ -137,7 +149,9 @@ class ConnectDialog(QDialog):
             self.devices.addItem(label, (serial, port))
         self.devices.addItem(SIMULATED, (SIMULATED_SERIAL, ""))
         if current:
-            index = self.devices.findText(current)
+            # A saved name also finds its "UN-... (COM5)" entry (Windows).
+            index = self.devices.findText(current,
+                                          Qt.MatchFlag.MatchStartsWith)
             if index >= 0:
                 self.devices.setCurrentIndex(index)
             else:

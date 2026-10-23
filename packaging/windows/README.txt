@@ -23,11 +23,12 @@ Remove it with uninstall.cmd (settings and recordings are kept).
 The headset
 -----------
 Pair it in Settings -> Bluetooth & devices. Windows gives it a serial
-(COM) port: find it under "More Bluetooth settings" (Windows 11: Settings
--> Bluetooth & devices -> Devices -> More Bluetooth settings), on the COM
-Ports tab, as the Outgoing port for the headset. If Rhino Recorder's
-device dialog does not list the headset, enter that port (e.g. COM5) as
-its serial port.
+(COM) port, and Rhino Recorder's device dialog lists the headset with
+it, e.g. "UN-2024.10.18 (COM5)". If it is not listed, find the port
+under "More Bluetooth settings" (Windows 11: Settings -> Bluetooth &
+devices -> Devices -> More Bluetooth settings), on the COM Ports tab, as
+the Outgoing port for the headset, and enter it (e.g. COM5) as the
+serial port.
 
 Triggers
 --------

@@ -14,7 +14,7 @@ dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
     "gpype[gui,lsl,formats]>=4.1,<5",
-    "gpype-rhino @ git+https://github.com/itubrainlab/gpype-rhino@v0.1.1",
+    "gpype-rhino @ git+https://github.com/itubrainlab/gpype-rhino@v0.1.2",
     "PySide6>=6.10.1,<6.12",
     "pyqtgraph>=0.13.3",
 ]
