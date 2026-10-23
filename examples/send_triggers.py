@@ -4,7 +4,7 @@
 
 Sends 1, 2, ... 10, 1, 2, ... once a second until Ctrl+C, like Unicorn
 Recorder's UDP Trigger Sender example. A trigger is its value as ASCII
-text in one datagram; it appears in the TRIGGER column on the sample at
+text in one datagram; it appears in the TRIG column on the sample at
 which it arrived.
 
 The default port is 1000, Rhino Recorder's (and Unicorn Recorder's).

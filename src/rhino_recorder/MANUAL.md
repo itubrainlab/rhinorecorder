@@ -110,7 +110,7 @@ Indicator, Timing. The channel order is:
 | 16 | BAT | Battery level in percent |
 | 17 | VALID | 1 if no sample was lost before this one, else 0 |
 | 18 | DT | Milliseconds between this sample's arrival and the previous one's |
-| 19 | TRIGGER | Trigger value, 0 when there is none (Unicorn Recorder calls this channel STATUS) |
+| 19 | TRIG | Trigger value, 0 when there is none (Unicorn Recorder calls this channel STATUS) |
 
 Channels that are excluded are left out and the others move up. The test
 signal input source is not available: gpype_rhino does not implement the
@@ -149,7 +149,7 @@ complete up to the last sample written.
   stimulus presentation tool. Send the trigger value as ASCII text in a
   UDP datagram, e.g. in Python:
   `socket.socket(socket.AF_INET, socket.SOCK_DGRAM).sendto(b"1", ("127.0.0.1", 1000))`.
-  It appears in the TRIGGER channel on the sample at which it arrived. The
+  It appears in the TRIG channel on the sample at which it arrived. The
   default is 127.0.0.1, port 1000, as in Unicorn Recorder. macOS only lets
   ordinary programs use ports below 1024 on all network interfaces, so
   there such a port listens on all of them: senders on 127.0.0.1 reach it,
@@ -174,7 +174,7 @@ does not implement those commands.
 ## Using Rhino Recorder in an experiment
 
 A stimulus program sends a trigger over UDP at each event; Rhino Recorder
-writes it into the TRIGGER channel beside the EEG, records both to CSV or
+writes it into the TRIG channel beside the EEG, records both to CSV or
 BDF for offline analysis, and streams both over UDP or LSL for online
 processing.
 

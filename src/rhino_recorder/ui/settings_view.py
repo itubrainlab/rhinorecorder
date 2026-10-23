@@ -159,7 +159,7 @@ class SettingsView(QWidget):
                            ("Timing", "timing")):
             form.addRow(text, _check(acq, attr))
         note = QLabel("Included signals are written to files and network "
-                      "streams. EEG and the TRIGGER channel are "
+                      "streams. EEG and the TRIG channel are "
                       "always included.")
         note.setWordWrap(True)
         note.setObjectName("Note")

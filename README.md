@@ -28,11 +28,11 @@ As in Unicorn Recorder:
   coloured by trigger value.
 - Signal quality for each electrode, shown beside its channel's trace.
 - The same 19 channels in the same order (EEG 1–8, ACC, GYR, CNT, BAT,
-  VALID, DT, TRIGGER), each optional block switchable in the acquisition
+  VALID, DT, TRIG), each optional block switchable in the acquisition
   settings.
 - Four loggers: raw and processed, each as CSV and as BDF+, each with its
   own folder and prefix, files named `<prefix>_<YYYYMMDD>_<HHMMSS>`.
-- Trigger UDP input into the TRIGGER channel; raw and processed outputs
+- Trigger UDP input into the TRIG channel; raw and processed outputs
   over UDP and LSL.
 - Device information.
 

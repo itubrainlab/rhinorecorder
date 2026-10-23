@@ -8,7 +8,7 @@ As a module::
     from read_recording import read
     rec = read("RhinoRecorder_20261023_101500.bdf")
     rec["data"]      # samples x channels, float
-    rec["labels"]    # e.g. ["EEG 1", ..., "TRIGGER"]
+    rec["labels"]    # e.g. ["EEG 1", ..., "TRIG"]
     rec["triggers"]  # (sample index, value) of every trigger
 """
 import sys
@@ -53,8 +53,8 @@ def read(path: str) -> dict:
         rate = SAMPLING_RATE
         info = {"notes": comments}
     triggers = []
-    # TRIGGER; files from Unicorn Recorder or older versions say STATUS.
-    name = next((n for n in ("TRIGGER", "STATUS") if n in labels), None)
+    # TRIG; older files say TRIGGER, Unicorn Recorder's say STATUS.
+    name = next((n for n in ("TRIG", "TRIGGER", "STATUS") if n in labels), None)
     if name:
         status = data[:, labels.index(name)]
         triggers = [(int(i), status[i]) for i in np.flatnonzero(status)]

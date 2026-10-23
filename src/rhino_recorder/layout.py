@@ -10,7 +10,7 @@ if it is included in the acquisition settings::
     BAT       battery level in percent
     VALID     1 when no sample was lost before this one
     DT        milliseconds since the previous sample was received
-    TRIGGER   trigger value (Unicorn Recorder's "STATUS" channel)
+    TRIG      trigger value (Unicorn Recorder's "STATUS" channel)
 
 RhinoRecorder keeps the same order, so analysis scripts written for
 Unicorn Recorder files read RhinoRecorder files unchanged.
@@ -50,7 +50,7 @@ CHANNELS: tuple[Channel, ...] = (
     Channel("BAT", "%", AUXILIARY, "battery"),
     Channel("VALID", "-", AUXILIARY, "validation"),
     Channel("DT", "ms", AUXILIARY, "timing"),
-    Channel("TRIGGER", "-", TRIGGER, None),
+    Channel("TRIG", "-", TRIGGER, None),
 )
 
 LABELS = [c.label for c in CHANNELS]
@@ -61,7 +61,7 @@ CNT = INDEX["CNT"]
 BAT = INDEX["BAT"]
 VALID = INDEX["VALID"]
 DT = INDEX["DT"]
-TRIGGER_CHANNEL = INDEX["TRIGGER"]
+TRIGGER_CHANNEL = INDEX["TRIG"]
 
 #: Columns of the gpype_rhino scan, as RhinoHybridBlack emits them with
 #: accelerometer, gyroscope and aux all included: EEG, accel, gyro,

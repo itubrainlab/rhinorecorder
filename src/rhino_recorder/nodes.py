@@ -1,7 +1,7 @@
 """RhinoRecorder's own g.Pype nodes.
 
 - :class:`UnicornLayout` puts the headset's channels into Unicorn
-  Recorder's order and adds the DT and TRIGGER channels.
+  Recorder's order and adds the DT and TRIG channels.
 - :class:`EegFilter` filters the EEG channels with a filter that can be
   swapped while the pipeline runs, so the Filter and Notch boxes work
   without restarting acquisition.
@@ -58,7 +58,7 @@ class UnicornLayout(gp.IONode):
 
     DT is the time between this sample's arrival and the previous one's,
     in milliseconds; with a frame size of 1 that is per sample, as in
-    Unicorn Recorder. TRIGGER carries a trigger value on the sample where
+    Unicorn Recorder. TRIG carries a trigger value on the sample where
     it arrived and zero elsewhere.
     """
 
@@ -364,7 +364,7 @@ _BDF_DIGITAL = (-8388608, 8388607)
 def _bdf_range(label: str, unit: str) -> tuple[float, float]:
     if label == "VALID":
         return (0.0, 1.0)
-    if label in ("CNT", "TRIGGER"):
+    if label in ("CNT", "TRIG"):
         # One digital step per count: the counter fits for 18 hours.
         return (0.0, float(_BDF_DIGITAL[1] - _BDF_DIGITAL[0]))
     return _BDF_RANGE.get(unit, (-750000.0, 750000.0))
@@ -401,14 +401,14 @@ def repair_bdf(path: str) -> int:
 
 
 class BdfLogger(GatedLogger):
-    """BDF+ (24-bit EDF+) with one-second data records. Every TRIGGER
+    """BDF+ (24-bit EDF+) with one-second data records. Every TRIG
     onset is also written as an annotation. A last, partial data record
     is padded by repeating the last sample."""
 
     extension = ".bdf"
 
     #: Annotation signals reserved; each holds a few annotations per
-    #: one-second record. TRIGGER keeps every trigger regardless.
+    #: one-second record. TRIG keeps every trigger regardless.
     ANNOTATION_SIGNALS = 8
 
     def _open_file(self, path):
@@ -454,8 +454,8 @@ class BdfLogger(GatedLogger):
         self._writer = writer
         self._record = int(round(rate * writer.record_duration))
         self._buffer = np.empty((0, n))
-        self._status = (self.labels.index("TRIGGER")
-                        if "TRIGGER" in self.labels else None)
+        self._status = (self.labels.index("TRIG")
+                        if "TRIG" in self.labels else None)
 
     def _write(self, block):
         if self._status is not None:

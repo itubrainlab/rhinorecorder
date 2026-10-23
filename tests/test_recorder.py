@@ -132,7 +132,7 @@ def test_excluded_signals_are_left_out_of_files(recorder, settings):
     for path in recorder.recording_paths:
         _, header, data = read_csv(path)
         assert header == [f"EEG {i}" for i in range(1, 9)] + \
-            ["CNT", "BAT", "VALID", "TRIGGER"]
+            ["CNT", "BAT", "VALID", "TRIG"]
         assert data.shape[1] == 12
 
 

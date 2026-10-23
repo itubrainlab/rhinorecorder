@@ -55,7 +55,7 @@ def test_selected_channels_follow_acquisition_settings():
     labels = [layout.LABELS[i] for i in layout.selected(s.acquisition.groups())]
     assert "ACC X" not in labels and "DT" not in labels
     assert labels[:8] == [f"EEG {i}" for i in range(1, 9)]
-    assert labels[-1] == "TRIGGER"
+    assert labels[-1] == "TRIG"
 
 
 def test_trigger_port_defaults_to_unicorn_recorders():
