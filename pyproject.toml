@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rhino_recorder"
+name = "rhinorecorder"
 dynamic = ["version"]
 description = "Acquire, view, record and stream EEG from the g.tec Unicorn Hybrid Black with g.Pype and gpype-rhino"
 readme = "README.md"
@@ -31,16 +31,16 @@ classifiers = [
 test = ["pytest>=7"]
 
 [project.gui-scripts]
-rhino-recorder = "rhino_recorder.app:main"
+rhino-recorder = "rhinorecorder.app:main"
 
 [tool.setuptools.dynamic]
-version = { attr = "rhino_recorder.__version__" }
+version = { attr = "rhinorecorder.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-rhino_recorder = ["MANUAL.md", "resources/*.svg"]
+rhinorecorder = ["MANUAL.md", "resources/*.svg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

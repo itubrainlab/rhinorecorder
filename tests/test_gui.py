@@ -7,8 +7,8 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from rhino_recorder.recorder import IDLE, RUNNING  # noqa: E402
-from rhino_recorder.simulator import SIMULATED_SERIAL  # noqa: E402
+from rhinorecorder.recorder import IDLE, RUNNING  # noqa: E402
+from rhinorecorder.simulator import SIMULATED_SERIAL  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -26,8 +26,8 @@ def wait_for(app, condition, timeout=10.0):
 
 
 def test_play_record_stop(app, settings, monkeypatch):
-    from rhino_recorder.ui.connect_dialog import Choice
-    from rhino_recorder.ui.main_window import MainWindow
+    from rhinorecorder.ui.connect_dialog import Choice
+    from rhinorecorder.ui.main_window import MainWindow
 
     from PySide6.QtWidgets import QMessageBox
 
@@ -92,7 +92,7 @@ def test_play_record_stop(app, settings, monkeypatch):
 
 
 def test_trigger_colours_are_stable_and_distinct():
-    from rhino_recorder.ui.scope import trigger_colour
+    from rhinorecorder.ui.scope import trigger_colour
 
     colours = [trigger_colour(v).name() for v in range(1, 11)]
     assert len(set(colours)) == 10
@@ -102,7 +102,7 @@ def test_trigger_colours_are_stable_and_distinct():
 def test_trigger_row(app):
     import numpy as np
 
-    from rhino_recorder.ui.scope import TRIGGER_ROW, Scope, trigger_colour
+    from rhinorecorder.ui.scope import TRIGGER_ROW, Scope, trigger_colour
 
     scope = Scope()
     scope.resize(1000, 600)

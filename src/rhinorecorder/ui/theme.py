@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 APP_ICON = Path(__file__).resolve().parent.parent / "resources" / \
-    "rhino_recorder.svg"
+    "rhinorecorder.svg"
 
 # The colours of g.Pype's dark palette (gpype.frontend.theme), named.
 WINDOW = "#353535"

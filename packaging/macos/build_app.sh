@@ -30,7 +30,7 @@ PYTHON_HOME="${PYTHON_HOME:-$(dirname "$(dirname "$(readlink -f "$(uv python fin
 [ -x "$PYTHON_HOME/bin/python3" ] || { echo "No Python at $PYTHON_HOME" >&2; exit 1; }
 ARCH="$(file -b "$(readlink -f "$PYTHON_HOME/bin/python3")" | grep -o 'arm64\|x86_64' | head -1)"
 
-VERSION="$("$DEV_PY" -c 'import rhino_recorder; print(rhino_recorder.__version__)')"
+VERSION="$("$DEV_PY" -c 'import rhinorecorder; print(rhinorecorder.__version__)')"
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD)"
 git -C "$ROOT" diff --quiet HEAD -- src pyproject.toml packaging || COMMIT="$COMMIT-dirty"
 BUILD_ID="$VERSION-$COMMIT-$ARCH"
@@ -85,7 +85,7 @@ cp "$HERE/../bootstrap.py" "$RES/bootstrap.py"
 cp "$ROOT/LICENSE" "$RES/LICENSE"
 echo "$BUILD_ID" > "$RES/build-id"
 sh "$WORK/gpype-rhino/src/gprhino/macos/build.sh" "$RES" >/dev/null
-"$DEV_PY" "$HERE/make_icns.py" "$ROOT/src/rhino_recorder/resources/rhino_recorder.svg" \
+"$DEV_PY" "$HERE/make_icns.py" "$ROOT/src/rhinorecorder/resources/rhinorecorder.svg" \
     "$RES/RhinoRecorder.icns" >/dev/null
 install -m 755 "$HERE/launcher.sh" "$APP/Contents/MacOS/RhinoRecorder"
 

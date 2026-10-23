@@ -1,5 +1,5 @@
 """The settings view: Acquisition, Recording, Network and Device pages,
-each editing the shared :class:`~rhino_recorder.settings.Settings` in
+each editing the shared :class:`~rhinorecorder.settings.Settings` in
 place."""
 from __future__ import annotations
 

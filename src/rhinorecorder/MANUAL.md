@@ -139,7 +139,7 @@ Every trigger is also stored as an annotation. *Local subject
 identification* and *Local recording identification* go into the BDF+
 header. A BDF file whose recording was cut short (the program was killed
 or crashed) lacks its record count in the header, and most readers refuse
-it; `rhino_recorder.nodes.repair_bdf(path)` restores it, and the
+it; `rhinorecorder.nodes.repair_bdf(path)` restores it, and the
 `read_recording.py` example does so on its own. The CSV files are always
 complete up to the last sample written.
 

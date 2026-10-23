@@ -15,7 +15,7 @@ def free_udp_port() -> int:
 @pytest.fixture
 def settings(tmp_path):
     """Default settings recording into tmp_path, trigger on a free port."""
-    from rhino_recorder.settings import Settings
+    from rhinorecorder.settings import Settings
 
     s = Settings()
     for logger in s.recording.loggers().values():

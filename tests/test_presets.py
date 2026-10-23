@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from scipy import signal
 
-from rhino_recorder import presets
-from rhino_recorder.layout import SAMPLING_RATE
+from rhinorecorder import presets
+from rhinorecorder.layout import SAMPLING_RATE
 
 
 def gain_db(sos, f):

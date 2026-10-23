@@ -25,7 +25,7 @@ def read(path: str) -> dict:
             reader = pyedflib.EdfReader(path)
         except OSError:
             # A recording cut short lacks its record count; restore it.
-            from rhino_recorder.nodes import repair_bdf
+            from rhinorecorder.nodes import repair_bdf
             repair_bdf(path)
             reader = pyedflib.EdfReader(path)
         with reader:

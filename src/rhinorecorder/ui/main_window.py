@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
         browser = QTextBrowser()
         browser.setOpenExternalLinks(True)
         try:
-            text = resources.files("rhino_recorder").joinpath(
+            text = resources.files("rhinorecorder").joinpath(
                 "MANUAL.md").read_text(encoding="utf-8")
         except (OSError, FileNotFoundError):
             text = "# Rhino Recorder\n\nThe manual was not installed."

@@ -1,7 +1,7 @@
 import json
 
-from rhino_recorder import layout
-from rhino_recorder.settings import Settings
+from rhinorecorder import layout
+from rhinorecorder.settings import Settings
 
 
 def test_round_trip(tmp_path):
@@ -77,7 +77,7 @@ def test_old_default_trigger_port_is_migrated(tmp_path):
 
 
 def test_trigger_bind_address():
-    from rhino_recorder.settings import trigger_bind_address as bind
+    from rhinorecorder.settings import trigger_bind_address as bind
     assert bind("127.0.0.1", 1000, "darwin") == "0.0.0.0"
     assert bind("127.0.0.1", 5000, "darwin") == "127.0.0.1"
     assert bind("192.168.1.5", 1000, "darwin") == "192.168.1.5"

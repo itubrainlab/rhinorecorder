@@ -7,8 +7,8 @@ import time
 import numpy as np
 import pytest
 
-from rhino_recorder import layout
-from rhino_recorder.recorder import IDLE, RUNNING, Recorder, recording_path
+from rhinorecorder import layout
+from rhinorecorder.recorder import IDLE, RUNNING, Recorder, recording_path
 
 from .conftest import free_udp_port
 
@@ -219,7 +219,7 @@ def test_recording_path_never_overwrites(tmp_path):
 
 def test_cut_short_bdf_can_be_repaired(recorder, settings):
     pyedflib = pytest.importorskip("pyedflib")
-    from rhino_recorder.nodes import repair_bdf
+    from rhinorecorder.nodes import repair_bdf
 
     settings.recording.raw_csv.enabled = False
     settings.recording.processed_csv.enabled = False

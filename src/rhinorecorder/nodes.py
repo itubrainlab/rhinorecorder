@@ -54,7 +54,7 @@ def describe(context: dict, indices: list[int]) -> None:
 
 class UnicornLayout(gp.IONode):
     """gpype-rhino's scan, plus an optional trigger channel, in Unicorn
-    Recorder's channel order (see :mod:`rhino_recorder.layout`).
+    Recorder's channel order (see :mod:`rhinorecorder.layout`).
 
     DT is the time between this sample's arrival and the previous one's,
     in milliseconds; with a frame size of 1 that is per sample, as in

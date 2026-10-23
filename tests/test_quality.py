@@ -1,7 +1,7 @@
 import numpy as np
 
-from rhino_recorder import quality
-from rhino_recorder.layout import SAMPLING_RATE
+from rhinorecorder import quality
+from rhinorecorder.layout import SAMPLING_RATE
 
 
 def test_good_flat_and_noisy_channels():

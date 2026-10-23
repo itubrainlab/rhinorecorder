@@ -65,7 +65,14 @@ python -m venv .venv
 ```
 
 Activate it (`.venv\Scripts\activate` on Windows,
-`source .venv/bin/activate` elsewhere), then, in this folder:
+`source .venv/bin/activate` elsewhere), then:
+
+```bash
+pip install "rhinorecorder @ git+https://github.com/itubrainlab/rhinorecorder"
+```
+
+or, to work on it, from a clone of
+[itubrainlab/rhinorecorder](https://github.com/itubrainlab/rhinorecorder):
 
 ```bash
 pip install -e ".[test]"
@@ -157,7 +164,7 @@ rhino-recorder --simulate
 ```
 
 The full user manual is in the app (the **?** button) and in
-[src/rhino_recorder/MANUAL.md](src/rhino_recorder/MANUAL.md).
+[src/rhinorecorder/MANUAL.md](src/rhinorecorder/MANUAL.md).
 
 ## Licence
 

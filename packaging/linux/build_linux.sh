@@ -25,7 +25,7 @@ PLATFORM="x86_64-manylinux_2_34"
 
 [ -x "$DEV_PY" ] || { echo "Run pip install -e '.[test]' into .venv first." >&2; exit 1; }
 
-VERSION="$("$DEV_PY" -c 'import rhino_recorder; print(rhino_recorder.__version__)')"
+VERSION="$("$DEV_PY" -c 'import rhinorecorder; print(rhinorecorder.__version__)')"
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD)"
 git -C "$ROOT" diff --quiet HEAD -- src pyproject.toml packaging || COMMIT="$COMMIT-dirty"
 BUILD_ID="$VERSION-$COMMIT-linux-x86_64"
@@ -81,7 +81,7 @@ cp "$HERE/../bootstrap.py" "$DIR/bootstrap.py"
 cp "$ROOT/LICENSE" "$HERE/README.txt" "$DIR/"
 echo "$BUILD_ID" > "$DIR/build-id"
 install -m 755 "$HERE/rhino-recorder" "$HERE/install.sh" "$HERE/uninstall.sh" "$DIR/"
-cp "$ROOT/src/rhino_recorder/resources/rhino_recorder.svg" "$DIR/rhino-recorder.svg"
+cp "$ROOT/src/rhinorecorder/resources/rhinorecorder.svg" "$DIR/rhino-recorder.svg"
 QT_QPA_PLATFORM=offscreen "$DEV_PY" -c '
 import sys
 from PySide6.QtGui import QGuiApplication, QIcon
