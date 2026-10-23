@@ -8,14 +8,14 @@ Bluetooth driver.
 
 ## Opening a device
 
-Pair the headset in the system's Bluetooth settings first. On Linux, also
-bind it to a serial port (`sudo rfcomm bind 0 <address>`).
+Pair the headset in the system's Bluetooth settings first.
 
 When Rhino Recorder starts, it lists the paired headsets it can find.
 Choose one, or type its name (for example `UN-2024.08.41`), and press
-**Open**. On Linux, enter its serial port (`/dev/rfcomm0`); on Windows,
-its COM port if it is not listed. **Simulated device** runs without a
-headset.
+**Open**. On Windows, enter its COM port if it is not listed. On Linux
+the headset is found by name among the paired devices, with no serial
+port, `rfcomm bind` or `dialout` group needed; its Bluetooth address
+works as a name too. **Simulated device** runs without a headset.
 
 Rhino Recorder connects once to check that the headset answers. If it
 does not, make sure it is switched on, in range and paired.

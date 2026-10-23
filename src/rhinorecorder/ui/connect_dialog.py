@@ -29,12 +29,19 @@ class Choice:
 
 def paired_devices() -> list[tuple[str, str, str]]:
     """(label, serial, port) of every paired headset found."""
+    found = []
+    if sys.platform.startswith("linux"):
+        # BlueZ's paired headsets, reached by name over an RFCOMM socket.
+        try:
+            from gprhino import find_headsets
+            found += [(name, name, "") for name in find_headsets()]
+        except Exception:  # noqa: BLE001
+            pass
     try:
         from gprhino import find_ports
         ports = find_ports()
     except Exception:  # noqa: BLE001
-        return []
-    found = []
+        return found
     for port in ports:
         name = port.rsplit("/", 1)[-1]
         for prefix in ("cu.", "tty."):
@@ -83,10 +90,11 @@ class ConnectDialog(QDialog):
             "empty for the first paired headset.")
         self.port = QLineEdit(settings.device.port)
         self.port.setPlaceholderText(
-            "/dev/rfcomm0" if sys.platform.startswith("linux") else
-            "COM5" if sys.platform == "win32" else "not needed on macOS")
+            "COM5" if sys.platform == "win32" else
+            "optional: /dev/rfcommN bound by hand"
+            if sys.platform.startswith("linux") else "not needed on macOS")
         self.transport = QComboBox()
-        self.transport.addItems(["auto", "serial", "bridge"])
+        self.transport.addItems(["auto", "serial", "bluetooth", "bridge"])
         self.transport.setCurrentText(settings.device.transport or "auto")
         self._refresh()
 
@@ -100,9 +108,7 @@ class ConnectDialog(QDialog):
         quit_button.clicked.connect(self.reject)
 
         intro = QLabel("Select the Unicorn Hybrid Black to open. Pair it in "
-                       "the system's Bluetooth settings first"
-                       + (", and bind it with rfcomm." if
-                          sys.platform.startswith("linux") else "."))
+                       "the system's Bluetooth settings first.")
         intro.setWordWrap(True)
         form = QFormLayout()
         device_row = QHBoxLayout()

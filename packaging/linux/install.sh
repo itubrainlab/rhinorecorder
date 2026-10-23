@@ -57,8 +57,3 @@ build="$(cat "$APP/build-id")"
 echo
 echo "Rhino Recorder is installed: open it from your applications menu, or"
 echo "run rhino-recorder (add ~/.local/bin to PATH if the shell cannot find it)."
-if ! id -nG | grep -qw dialout; then
-    echo
-    echo "To read the headset's serial port, add yourself to the dialout group,"
-    echo "then log out and in again:  sudo usermod -aG dialout $USER"
-fi

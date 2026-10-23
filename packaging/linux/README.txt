@@ -25,13 +25,15 @@ Remove it with ./uninstall.sh (settings and recordings are kept).
 
 The headset
 -----------
-Pair it in the system's Bluetooth settings, then bind it to a serial
-port and give that port in Rhino Recorder's device dialog:
+Pair it in the system's Bluetooth settings, or with bluetoothctl:
 
-    sudo rfcomm bind 0 <headset Bluetooth address>     -> /dev/rfcomm0
+    bluetoothctl
+    scan on
+    pair <headset Bluetooth address>
+    trust <headset Bluetooth address>
 
-To use the port without root, add yourself to the dialout group and log
-in again:  sudo usermod -aG dialout $USER
+Rhino Recorder then lists it by name in its device dialog and connects
+to it directly: no rfcomm bind, root or dialout group is needed.
 
 Triggers
 --------

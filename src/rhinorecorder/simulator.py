@@ -85,7 +85,7 @@ class SignalModel:
 
 
 class SimulatedLink:
-    """Stands in for gpype-rhino's SerialLink and BridgeLink."""
+    """Stands in for gpype-rhino's SerialLink, BluetoothLink and BridgeLink."""
 
     def __init__(self, seed: Optional[int] = None):
         self.model = SignalModel(seed)

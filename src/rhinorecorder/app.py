@@ -2,7 +2,7 @@
 
     rhino-recorder                      choose a headset, then record
     rhino-recorder --device UN-2024.08.41
-    rhino-recorder --port /dev/rfcomm0  (Linux)
+    rhino-recorder --port COM5          (Windows)
     rhino-recorder --simulate           no headset needed
 """
 from __future__ import annotations
@@ -22,8 +22,8 @@ def parse_args(argv=None) -> argparse.Namespace:
                         help="the headset's Bluetooth name, e.g. "
                              "UN-2024.08.41; skips the device dialog")
     parser.add_argument("--port", help="the headset's serial port, e.g. "
-                                       "/dev/rfcomm0 or COM5")
-    parser.add_argument("--transport", choices=["auto", "serial", "bridge"],
+                                       "COM5; not needed on Linux or macOS")
+    parser.add_argument("--transport", choices=["auto", "serial", "bluetooth", "bridge"],
                         default=None)
     parser.add_argument("--simulate", action="store_true",
                         help="use a simulated headset")

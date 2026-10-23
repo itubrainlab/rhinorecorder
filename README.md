@@ -89,15 +89,12 @@ PyPI and gpype-rhino from GitHub.
   its RhinoConnect helper on first use, which needs the Xcode command
   line tools (`xcode-select --install`). macOS asks once for Bluetooth
   access.
-- **Linux**: pair the headset, then bind it to a serial port and enter
-  that port when opening the device:
-
-  ```bash
-  sudo rfcomm bind 0 <headset-address>
-  ```
-
-  You may need to add yourself to the `dialout` group. Qt needs the usual
-  X11/Wayland libraries (on Debian/Ubuntu, `libxcb-cursor0` among them).
+- **Linux**: pair the headset (in Bluetooth settings, or with
+  `bluetoothctl`: `scan on`, `pair <address>`, `trust <address>`).
+  gpype-rhino finds it by name among BlueZ's paired devices and connects
+  over an RFCOMM socket, so no `rfcomm bind`, root or `dialout` group is
+  needed. Qt needs the usual X11/Wayland libraries (on Debian/Ubuntu,
+  `libxcb-cursor0` among them).
 
 ## macOS app
 
@@ -139,8 +136,7 @@ gpype-rhino but not g.Pype, which the first launch installs from PyPI at
 the tested versions, into `~/.local/share/RhinoRecorder`. Users unpack
 it and run `./install.sh`: no administrator rights, a menu entry with
 the icon, and a `rhino-recorder` command; `./uninstall.sh` removes it.
-Its [README](packaging/linux/README.txt) covers rfcomm and the dialout
-group.
+Its [README](packaging/linux/README.txt) covers pairing the headset.
 
 It is for x86_64 only, with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
 Fedora 35 or later): g.Pype publishes no ARM Linux build, and PySide6's

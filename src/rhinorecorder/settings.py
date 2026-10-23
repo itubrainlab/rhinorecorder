@@ -152,9 +152,10 @@ class Display:
 class Device:
     #: The headset's Bluetooth name, e.g. UN-2024.08.41.
     serial: str = ""
-    #: Its serial port, where the name cannot find it (Linux).
+    #: Its serial port, where the name cannot find it (Windows), or a
+    #: /dev/rfcommN bound by hand (Linux).
     port: str = ""
-    #: "auto", "serial" or "bridge"; see gprhino.RhinoDevice.
+    #: "auto", "serial", "bluetooth" or "bridge"; see gprhino.RhinoDevice.
     transport: str = "auto"
 
 
