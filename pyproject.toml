@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rhino_recorder"
+dynamic = ["version"]
+description = "Acquire, view, record and stream EEG from the g.tec Unicorn Hybrid Black with g.Pype and gpype_rhino"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "gpype[gui,lsl,formats]>=4.1,<5",
+    "gpype_rhino @ git+https://github.com/itubrainlab/gpype_rhino",
+    "PySide6>=6.10.1,<6.12",
+    "pyqtgraph>=0.13.3",
+]
+keywords = ["eeg", "bci", "unicorn", "gpype", "recorder", "lsl"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.gui-scripts]
+rhino-recorder = "rhino_recorder.app:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "rhino_recorder.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rhino_recorder = ["MANUAL.md", "resources/*.svg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
