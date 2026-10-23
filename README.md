@@ -48,7 +48,7 @@ receiver, and a file reader in place of the MATLAB import script.
 | Driver | g.tec Unicorn driver | gpype-rhino (Bluetooth serial) |
 | Test signal input, digital outputs, firmware version | yes | no: gpype-rhino does not implement these commands |
 | OSCAR | processed outputs only | all outputs, raw ones included (g.Pype runs OSCAR at the source); switching it restarts acquisition |
-| Trigger port 1000 | listens on 127.0.0.1 | the same on Windows; on macOS on all interfaces (the only way macOS allows ports below 1024); on Linux needs root, so choose a port ≥ 1024 there |
+| Default ports | trigger 1000, UDP outputs 1001 and 1002 | trigger 10000, UDP outputs 10001 and 10002: no administrator rights needed on any platform |
 | File and stream names | `UnicornRecorder…` | `RhinoRecorder…` (configurable) |
 | CSV | values only | a header row with the channel names |
 | Look | Unicorn branding, light work area | g.Pype's dark theme; a rhino pretending to be a unicorn as its icon |
@@ -144,8 +144,7 @@ group.
 
 It is for x86_64 only, with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
 Fedora 35 or later): g.Pype publishes no ARM Linux build, and PySide6's
-Linux wheels need glibc 2.34. The default trigger port, 1000, needs root
-on Linux; choose one from 1024 up there.
+Linux wheels need glibc 2.34.
 
 ## Run
 

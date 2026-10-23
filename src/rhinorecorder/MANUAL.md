@@ -148,16 +148,15 @@ complete up to the last sample written.
 - **Trigger UDP Input** receives triggers from another program, such as a
   stimulus presentation tool. Send the trigger value as ASCII text in a
   UDP datagram, e.g. in Python:
-  `socket.socket(socket.AF_INET, socket.SOCK_DGRAM).sendto(b"1", ("127.0.0.1", 1000))`.
+  `socket.socket(socket.AF_INET, socket.SOCK_DGRAM).sendto(b"1", ("127.0.0.1", 10000))`.
   It appears in the TRIG channel on the sample at which it arrived. The
-  default is 127.0.0.1, port 1000, as in Unicorn Recorder. macOS only lets
-  ordinary programs use ports below 1024 on all network interfaces, so
-  there such a port listens on all of them: senders on 127.0.0.1 reach it,
-  and so can other computers on your network. Linux needs administrator
-  rights for ports below 1024; use a port from 1024 up there.
+  default is 127.0.0.1, port 10000. (Unicorn Recorder uses 1000; ports
+  below 1024 need administrator rights on Linux, and on macOS can only be
+  used on all network interfaces, so a port below 1024 on 127.0.0.1 also
+  listens to other computers on your network there.)
 - **Raw / Processed Data UDP Output** sends each sample as one datagram of
   comma-separated values with three decimals, ending in a newline
-  (default ports 1002 and 1001).
+  (default ports 10002 and 10001).
 - **Raw / Processed Data LSL Output** publishes a Lab Streaming Layer
   stream (type `EEG`, 250 Hz, channel labels and units in its
   description; default names `RhinoRecorderRawDataLSLStream` and

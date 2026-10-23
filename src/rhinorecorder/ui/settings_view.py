@@ -205,10 +205,10 @@ class SettingsView(QWidget):
             else:
                 form.addRow("Streamname", _text(endpoint, "name", 300))
         note = QLabel("The port used for the Trigger UDP Input must differ "
-                      "from the ports used for data outputs. On macOS, a "
-                      "trigger port below 1024 on 127.0.0.1 listens on all "
-                      "network interfaces, the only way macOS allows it; "
-                      "on Linux such a port needs administrator rights.")
+                      "from the ports used for data outputs. Avoid ports "
+                      "below 1024: Linux reserves them for administrators, "
+                      "and on macOS a trigger port below 1024 on 127.0.0.1 "
+                      "listens on all network interfaces.")
         note.setWordWrap(True)
         note.setObjectName("Note")
         column.addWidget(note)

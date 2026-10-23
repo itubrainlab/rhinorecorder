@@ -7,14 +7,14 @@ Recorder's UDP Trigger Sender example. A trigger is its value as ASCII
 text in one datagram; it appears in the TRIG column on the sample at
 which it arrived.
 
-The default port is 1000, Rhino Recorder's (and Unicorn Recorder's).
+The default port is 10000, Rhino Recorder's trigger input.
 """
 import socket
 import sys
 import time
 
 ip = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
-port = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
+port = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
 
 sender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 print(f"Sending triggers to {ip}:{port}. Press Ctrl+C to stop.")

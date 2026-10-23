@@ -13,15 +13,20 @@ from . import presets
 
 APP_NAME = "RhinoRecorder"
 
-#: Unicorn Recorder listens for triggers on port 1000, and so does
-#: Rhino Recorder (see trigger_bind_address for macOS and Linux).
-DEFAULT_TRIGGER_PORT = 1000
+#: Default ports: Unicorn Recorder's (1000, 1001, 1002) moved up to
+#: 10000, which needs no administrator rights on any platform.
+DEFAULT_TRIGGER_PORT = 10000
+DEFAULT_PROCESSED_UDP_PORT = 10001
+DEFAULT_RAW_UDP_PORT = 10002
 #: The default trigger port of settings files written before version 1.
 _OLD_TRIGGER_PORT = 11000
 #: The default filter and OSCAR of settings files before version 2.
 _OLD_DISPLAY = ("1 – 30 Hz", False)
+#: The default ports of settings files before version 3: trigger input,
+#: processed and raw UDP output.
+_OLD_PORTS = (1000, 1001, 1002)
 #: Bumped when a settings file needs migrating on load.
-SETTINGS_VERSION = 2
+SETTINGS_VERSION = 3
 
 _LOOPBACK = ("127.0.0.1", "localhost")
 
@@ -105,7 +110,7 @@ class Recording:
 class UdpEndpoint:
     enabled: bool = False
     ip: str = "127.0.0.1"
-    port: int = 1001
+    port: int = DEFAULT_PROCESSED_UDP_PORT
 
 
 @dataclass
@@ -119,11 +124,11 @@ class Network:
     trigger_in: UdpEndpoint = field(default_factory=lambda: UdpEndpoint(
         enabled=True, port=DEFAULT_TRIGGER_PORT))
     raw_udp: UdpEndpoint = field(
-        default_factory=lambda: UdpEndpoint(port=1002))
+        default_factory=lambda: UdpEndpoint(port=DEFAULT_RAW_UDP_PORT))
     raw_lsl: LslStream = field(default_factory=lambda: LslStream(
         name="RhinoRecorderRawDataLSLStream"))
     processed_udp: UdpEndpoint = field(
-        default_factory=lambda: UdpEndpoint(port=1001))
+        default_factory=lambda: UdpEndpoint(port=DEFAULT_PROCESSED_UDP_PORT))
     processed_lsl: LslStream = field(default_factory=LslStream)
 
     def any_output(self) -> bool:
@@ -207,6 +212,16 @@ class Settings:
                 settings.network.trigger_in.port == _OLD_TRIGGER_PORT:
             # Version 0 defaulted to 11000 on macOS and Linux.
             settings.network.trigger_in.port = DEFAULT_TRIGGER_PORT
+        if version < 3:
+            # Before version 3 the ports defaulted to 1000, 1001, 1002.
+            net = settings.network
+            for endpoint, old, new in (
+                    (net.trigger_in, _OLD_PORTS[0], DEFAULT_TRIGGER_PORT),
+                    (net.processed_udp, _OLD_PORTS[1],
+                     DEFAULT_PROCESSED_UDP_PORT),
+                    (net.raw_udp, _OLD_PORTS[2], DEFAULT_RAW_UDP_PORT)):
+                if endpoint.port == old:
+                    endpoint.port = new
         display = settings.display
         if version < 2 and (display.filter, display.oscar) == _OLD_DISPLAY:
             # Before version 2: 1-30 Hz without OSCAR, left at default.

@@ -22,7 +22,7 @@ def test_bad_or_old_files_fall_back_to_defaults(tmp_path):
     assert Settings.load(path) == Settings()
     path.write_text(json.dumps({
         "display": {"filter": "no such filter", "notch": 7},
-        "network": {"trigger_in": {"port": "1000"}},
+        "network": {"trigger_in": {"port": "10000"}},
         "unknown": 1,
     }))
     loaded = Settings.load(path)
@@ -58,8 +58,10 @@ def test_selected_channels_follow_acquisition_settings():
     assert labels[-1] == "TRIG"
 
 
-def test_trigger_port_defaults_to_unicorn_recorders():
-    assert Settings().network.trigger_in.port == 1000
+def test_default_ports():
+    net = Settings().network
+    assert (net.trigger_in.port, net.processed_udp.port,
+            net.raw_udp.port) == (10000, 10001, 10002)
 
 
 def test_old_default_trigger_port_is_migrated(tmp_path):
@@ -68,7 +70,7 @@ def test_old_default_trigger_port_is_migrated(tmp_path):
     del old["version"]
     old["network"]["trigger_in"]["port"] = 11000
     path.write_text(json.dumps(old))
-    assert Settings.load(path).network.trigger_in.port == 1000
+    assert Settings.load(path).network.trigger_in.port == 10000
     # A port chosen in a current file is kept.
     current = Settings()
     current.network.trigger_in.port = 11000
@@ -100,3 +102,16 @@ def test_display_defaults_and_migration(tmp_path):
     path.write_text(json.dumps(old))
     loaded = Settings.load(path).display
     assert (loaded.filter, loaded.oscar) == ("2 – 30 Hz", False)
+
+
+def test_old_default_ports_are_migrated(tmp_path):
+    path = tmp_path / "settings.json"
+    old = Settings().to_dict()
+    old["version"] = 2
+    old["network"]["trigger_in"]["port"] = 1000
+    old["network"]["processed_udp"]["port"] = 1001
+    old["network"]["raw_udp"]["port"] = 5555          # chosen by the user
+    path.write_text(json.dumps(old))
+    net = Settings.load(path).network
+    assert (net.trigger_in.port, net.processed_udp.port,
+            net.raw_udp.port) == (10000, 10001, 5555)

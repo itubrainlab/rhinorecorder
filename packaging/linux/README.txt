@@ -35,9 +35,9 @@ in again:  sudo usermod -aG dialout $USER
 
 Triggers
 --------
-The trigger input listens on 127.0.0.1, port 1000 by default. Linux
-reserves ports below 1024 for root, so choose a port from 1024 up in
-Settings -> Network (and send triggers there).
+The trigger input listens on 127.0.0.1, port 10000 by default; send
+triggers there. Linux reserves ports below 1024 for root, so keep any
+port you choose in Settings -> Network at 1024 or above.
 
 Licence
 -------

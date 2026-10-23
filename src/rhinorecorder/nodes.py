@@ -488,7 +488,7 @@ class UdpCsvSender(_Described):
     """Each sample as one datagram of comma-separated values with three
     decimals, ending in a newline, as Unicorn Recorder sends them."""
 
-    def __init__(self, ip: str = "127.0.0.1", port: int = 1001, **kwargs):
+    def __init__(self, ip: str = "127.0.0.1", port: int = 10001, **kwargs):
         super().__init__(**kwargs)
         self._target = (ip, int(port))
         self._socket: Optional[socket.socket] = None
