@@ -54,6 +54,13 @@ QPushButton#Primary:hover {{ background: #0078cc; border-color: #0078cc; }}
 QPushButton#Primary:disabled {{ background: {ALTERNATE};
     border-color: {ALTERNATE}; }}
 QLabel#Note {{ color: {MUTED}; }}
+#SourceToggle QToolButton {{
+    padding: 2px 10px; color: {MUTED}; background: {BASE};
+    border: 1px solid {ALTERNATE};
+}}
+#SourceToggle QToolButton:checked {{
+    color: {TEXT}; background: {HIGHLIGHT}; border-color: {HIGHLIGHT};
+}}
 QScrollArea, QScrollArea > QWidget > QWidget {{ background: transparent; }}
 """
 

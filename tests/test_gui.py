@@ -126,3 +126,96 @@ def test_trigger_row(app):
     assert not any(label.isVisible() for label in scope._trigger_labels)
     cleared = scope._trigger_items[3][0].getData()[0]
     assert cleared is None or len(cleared) == 0
+
+
+def test_power_spectrum(app, settings, monkeypatch):
+    import numpy as np
+
+    from rhinorecorder.ui.connect_dialog import Choice
+    from rhinorecorder.ui.main_window import MainWindow
+
+    monkeypatch.setattr(MainWindow, "_save_settings", lambda self: None)
+    window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+    window.show()
+    try:
+        assert window.spectrum_panel.isVisible()
+        # Square by default, also after the window is resized ...
+        for size in ((1500, 760), (1700, 900)):
+            window.resize(*size)
+            wait_for(app, lambda: abs(window.spectrum.width()
+                                      - window.spectrum.height()) <= 2)
+        assert window.spectrum.width() > 500
+        assert [r.getRegion() for r in window.spectrum.band_regions] == [
+            (0.5, 4.0), (4.0, 8.0), (8.0, 13.0), (13.0, 30.0), (30.0, 100.0)]
+        # ... until the user drags the divider.
+        window.splitter.splitterMoved.emit(700, 1)
+        window.splitter.setSizes([1000, 300])
+        window.resize(1300, 800)
+        app.processEvents()
+        assert window.splitter.sizes()[1] < 500
+        window.play_button.click()
+        wait_for(app, lambda: window.recorder.state == RUNNING
+                 and not window._busy)
+        wait_for(app, lambda: window.recorder.graph.status.total > 300)
+        window._update_status()
+        freqs, db = window.spectrum.curve.getOriginalDataset()
+        assert freqs[0] == 0 and freqs[-1] == 100
+        assert np.isfinite(db).all()
+
+        # Hidden, it is remembered in the settings, and shown again.
+        window.spectrum_box.setChecked(False)
+        assert not window.spectrum_panel.isVisible()
+        assert settings.display.spectrum is False
+        window.spectrum_box.setChecked(True)
+        assert window.spectrum_panel.isVisible()
+
+        window.play_button.click()
+        wait_for(app, lambda: window.recorder.state == IDLE
+                 and not window._busy)
+    finally:
+        window.close()
+
+
+def test_power_spectrum_follows_the_filter(app, settings, monkeypatch):
+    import numpy as np
+
+    from rhinorecorder.ui.connect_dialog import Choice
+    from rhinorecorder.ui.main_window import MainWindow
+
+    monkeypatch.setattr(MainWindow, "_save_settings", lambda self: None)
+    settings.display.filter = "< 20 Hz"
+    settings.display.notch = "None"
+    window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+    window.show()
+    try:
+        window.play_button.click()
+        wait_for(app, lambda: window.recorder.state == RUNNING
+                 and not window._busy)
+        wait_for(app, lambda: window.recorder.graph.scope.total > 750)
+        window._update_status()
+        freqs, db = window.spectrum.curve.getOriginalDataset()
+        passed = db[(freqs >= 5) & (freqs <= 15)].mean()
+        stopped = db[freqs >= 60].mean()
+        # A 4th-order lowpass at 20 Hz: tens of dB down above 60 Hz.
+        assert stopped < passed - 20, (passed, stopped)
+
+        # Raw: the whole band is back.
+        assert not window.spectrum_source.is_raw()
+        window.spectrum_source.raw.click()
+        freqs, db = window.spectrum.curve.getOriginalDataset()
+        assert db[freqs >= 60].mean() > passed - 20
+
+        # The data viewer's switch is its own; raw, each channel is
+        # centred on its row despite the electrode offsets.
+        assert not window.scope_source.is_raw()
+        window.scope_source.raw.click()
+        for row, curve in enumerate(window.scope.curves):
+            _, y = curve.getData()
+            centre = window.scope.channels - row - 0.5
+            assert abs(np.nanmedian(y) - centre) < 0.25
+
+        window.play_button.click()
+        wait_for(app, lambda: window.recorder.state == IDLE
+                 and not window._busy)
+    finally:
+        window.close()

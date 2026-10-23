@@ -146,6 +146,8 @@ class Display:
     filter: str = presets.DEFAULT_FILTER
     notch: str = presets.DEFAULT_NOTCH
     oscar: bool = True
+    #: Whether the power spectrum is shown beside the data viewer.
+    spectrum: bool = True
 
 
 @dataclass

@@ -8,14 +8,15 @@ import time
 from collections import deque
 from importlib import resources
 
-from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFrame,
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QTimer, Signal
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog,
+                               QFrame,
                                QGroupBox, QHBoxLayout, QLabel, QMainWindow, QMessageBox,
-                               QPushButton, QStackedWidget,
+                               QPushButton, QSplitter, QStackedWidget,
                                QTextBrowser, QToolButton, QVBoxLayout,
                                QWidget)
 
-from .. import layout, presets, quality
+from .. import layout, presets, quality, spectrum
 from ..power import KeepAwake
 from ..recorder import IDLE, RUNNING, STARTING, STOPPING, Recorder
 from ..settings import Settings
@@ -23,13 +24,15 @@ from . import icons, theme
 from .connect_dialog import Choice
 from .scope import Scope
 from .settings_view import SettingsView
+from .spectrum import SpectrumView
 
 SCOPE_INTERVAL_MS = 40
 
-OSCAR_TIP = ("OSCAR removes motion, cable, blink and other artifacts. "
-             "g.Pype runs it at the source, so it applies to raw and "
-             "processed outputs alike and delays the data by about a third "
-             "of a second. Switching it restarts acquisition.")
+OSCAR_TIP = ("OSCAR removes motion, cable, blink and other artifacts "
+             "from the processed EEG: the filtered views and the processed "
+             "outputs. Raw views and outputs stay raw. It delays the data "
+             "by about a third of a second. Switching it restarts "
+             "acquisition.")
 STATUS_INTERVAL_MS = 500
 
 
@@ -66,13 +69,49 @@ def _divider() -> QFrame:
     return line
 
 
-def _panel(title: str, content: QWidget) -> QGroupBox:
-    """Content in a titled group box, as g.Pype widgets are shown."""
+def _panel(title: str, content: QWidget,
+           corner: QWidget | None = None) -> QGroupBox:
+    """Content in a titled group box, as g.Pype widgets are shown, with
+    an optional control in its top right corner."""
     box = QGroupBox(title)
     column = QVBoxLayout(box)
     column.setContentsMargins(8, 8, 8, 8)
+    if corner is not None:
+        header = QHBoxLayout()
+        header.addStretch(1)
+        header.addWidget(corner)
+        column.addLayout(header)
     column.addWidget(content)
     return box
+
+
+class SourceToggle(QWidget):
+    """A two-way switch, Filtered | Raw, choosing whether a visualisation
+    shows the EEG after the filter and notch or before them. Emits
+    ``changed`` with True for raw."""
+
+    changed = Signal(bool)
+
+    def __init__(self, tip: str, parent=None):
+        super().__init__(parent)
+        self.setObjectName("SourceToggle")
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+        self.filtered = QToolButton(text="Filtered")
+        self.raw = QToolButton(text="Raw")
+        group = QButtonGroup(self)
+        for button in (self.filtered, self.raw):
+            button.setCheckable(True)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            group.addButton(button)
+            row.addWidget(button)
+        self.filtered.setChecked(True)
+        self.raw.toggled.connect(self.changed.emit)
+        self.setToolTip(tip)
+
+    def is_raw(self) -> bool:
+        return self.raw.isChecked()
 
 
 class MainWindow(QMainWindow):
@@ -110,7 +149,8 @@ class MainWindow(QMainWindow):
         self.recorder.on_recording = bridge.recording.emit
 
         self.setWindowTitle("Rhino Recorder")
-        self.resize(1100, 720)
+        # Wide enough for a square power spectrum beside the data viewer.
+        self.resize(1500, 760)
         central = QWidget()
         column = QVBoxLayout(central)
         column.setContentsMargins(0, 0, 0, 0)
@@ -189,6 +229,11 @@ class MainWindow(QMainWindow):
         self.oscar.setChecked(display.oscar)
         self.oscar.setToolTip(OSCAR_TIP)
         self.oscar.toggled.connect(self._on_oscar)
+        self.spectrum_box = QCheckBox("Spectrum")
+        self.spectrum_box.setChecked(display.spectrum)
+        self.spectrum_box.setToolTip("Show the power spectrum beside the "
+                                     "data viewer")
+        self.spectrum_box.toggled.connect(self._on_spectrum)
         for text, widget in (("Scaling", self.scaling),
                              ("Filter", self.filter),
                              ("Notch", self.notch)):
@@ -196,6 +241,8 @@ class MainWindow(QMainWindow):
             controls.addWidget(widget)
             controls.addSpacing(10)
         controls.addWidget(self.oscar)
+        controls.addSpacing(4)
+        controls.addWidget(self.spectrum_box)
         row.addWidget(self.display_controls)
         row.addStretch(1)
 
@@ -222,14 +269,61 @@ class MainWindow(QMainWindow):
 
     def _acquisition_view(self) -> QWidget:
         """The data viewer, with each channel's signal quality beside it,
-        in a g.Pype panel."""
+        and the power spectrum on the right, each in a g.Pype panel."""
         view = QWidget()
         row = QHBoxLayout(view)
         row.setContentsMargins(10, 4, 10, 10)
         self.scope = Scope()
         self.scope.set_scale(presets.SCALINGS[self.settings.display.scaling])
-        row.addWidget(_panel("Data Viewer", self.scope), 1)
+        self.scope_source = SourceToggle(
+            "Filtered: the EEG after OSCAR (when on), the filter and "
+            "notch.\nRaw: the EEG as acquired, each channel's mean over "
+            "the sweep removed so it stays in its row.")
+        self.scope_source.changed.connect(lambda _: self._update_scope())
+        self.spectrum = SpectrumView()
+        self.spectrum_source = SourceToggle(
+            "Filtered: the spectrum of the EEG after OSCAR (when on), the "
+            "filter and notch.\nRaw: of the EEG as acquired, the whole "
+            "band, mains interference included.")
+        self.spectrum_source.changed.connect(
+            lambda _: self._update_spectrum())
+        self.spectrum_panel = _panel("Power Spectrum", self.spectrum,
+                                     self.spectrum_source)
+        self.spectrum_panel.setMinimumWidth(240)
+        self.spectrum_panel.setVisible(self.settings.display.spectrum)
+        splitter = self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(_panel("Data Viewer", self.scope,
+                                  self.scope_source))
+        splitter.addWidget(self.spectrum_panel)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 0)
+        # The spectrum stays square until the user drags the divider.
+        self._spectrum_resized = False
+        splitter.splitterMoved.connect(self._on_splitter_moved)
+        splitter.installEventFilter(self)
+        row.addWidget(splitter, 1)
         return view
+
+    def _on_splitter_moved(self, *_) -> None:
+        self._spectrum_resized = True
+
+    def _square_spectrum(self) -> None:
+        """Make the spectrum plot as wide as it is tall, leaving the data
+        viewer at least half the width."""
+        if self._spectrum_resized or not self.spectrum_panel.isVisible():
+            return
+        total = sum(self.splitter.sizes())
+        frame = self.spectrum_panel.width() - self.spectrum.width()
+        width = min(self.spectrum.height() + frame, total // 2)
+        width = max(width, self.spectrum_panel.minimumWidth())
+        self.splitter.setSizes([total - width, width])
+
+    def eventFilter(self, watched, event):
+        if watched is self.splitter and event.type() in (QEvent.Type.Resize,
+                                                         QEvent.Type.Show):
+            QTimer.singleShot(0, self, self._square_spectrum)
+        return super().eventFilter(watched, event)
 
     def _device_info(self) -> dict:
         try:
@@ -325,6 +419,13 @@ class MainWindow(QMainWindow):
         self.settings.display.scaling = name
         self.scope.set_scale(presets.SCALINGS[name])
 
+    def _on_spectrum(self, on: bool) -> None:
+        self.settings.display.spectrum = on
+        self.spectrum_panel.setVisible(on)
+        if on:
+            QTimer.singleShot(0, self, self._square_spectrum)
+            self._update_spectrum()
+
     def _on_oscar(self, on: bool) -> None:
         if on == self.settings.display.oscar:
             return
@@ -389,6 +490,7 @@ class MainWindow(QMainWindow):
             self.quality.reset()
             self._quality_seen = 0
             self.scope.clear()
+            self.spectrum.clear()
         if state == IDLE:
             self._recording_since = None
         self._update_controls()
@@ -465,8 +567,23 @@ class MainWindow(QMainWindow):
         graph = self.recorder.graph
         if graph is None or self.stack.currentIndex() != 0:
             return
-        buffer, total = graph.scope.sweep()
+        raw = self.scope_source.is_raw()
+        buffer, total = (graph.status if raw else graph.scope).sweep()
+        filled = min(total, buffer.shape[0])
+        if raw and filled:
+            # Raw EEG sits thousands of µV off zero: centre each channel
+            # on its mean over the sweep so it stays in its row.
+            buffer[:, layout.EEG] -= buffer[:filled, layout.EEG].mean(axis=0)
         self.scope.show_sweep(buffer, total, layout.EEG, layout.TRIGGER_CHANNEL)
+
+    def _update_spectrum(self) -> None:
+        graph = self.recorder.graph
+        if (graph is None or not self.spectrum_panel.isVisible()
+                or self.stack.currentIndex() != 0):
+            return
+        tap = graph.status if self.spectrum_source.is_raw() else graph.scope
+        samples = int(spectrum.WINDOW_S * layout.SAMPLING_RATE)
+        self.spectrum.show_eeg(tap.latest(samples)[:, layout.EEG])
 
     def _update_status(self) -> None:
         recorder = self.recorder
@@ -513,6 +630,7 @@ class MainWindow(QMainWindow):
             self._quality_seen = tap.total
         self.scope.set_quality(self.quality.verdicts(),
                                self.quality.deviation())
+        self._update_spectrum()
 
         if recorder.recording and self._recording_since is not None:
             elapsed = int(time.monotonic() - self._recording_since)

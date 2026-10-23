@@ -51,9 +51,10 @@ display*) and the status icons.
 
 - **Scaling** sets the displayed amplitude range of the EEG channels.
 - **OSCAR** (on by default) removes motion, cable, blink and other
-  artifacts. g.Pype runs
-  OSCAR right at the source, so with OSCAR on, *all* outputs, raw ones
-  included, carry OSCAR-processed EEG, delayed by about 0.33 s. Switching
+  artifacts from the processed EEG: the **Filtered** views and the
+  processed files and streams. The raw files, streams and **Raw** views
+  stay raw. With OSCAR on, all of them are delayed by about 0.33 s, raw
+  and processed together, so their rows still match. Switching
   OSCAR restarts acquisition, so the box is disabled while recording; the
   status bar says "OSCAR on" while it runs. OSCAR also removes the
   electrodes' DC offsets, and needs about two seconds to settle after
@@ -66,6 +67,8 @@ display*) and the status icons.
   none. Filters are 4th-order Butterworth IIR filters.
 - **Notch**: 50 Hz, 60 Hz, 50 & 60 Hz, or cascading versions that also
   remove every harmonic below 125 Hz; or none.
+- **Spectrum** shows or hides the power spectrum beside the data viewer
+  (see *Power spectrum*). The choice is remembered.
 
 Filter and notch apply to the EEG channels of the display and of the
 processed outputs, and can be changed while recording.
@@ -74,6 +77,12 @@ processed outputs, and can be changed while recording.
 
 Shows the eight EEG channels over 10 seconds, sweeping from left to right.
 The blue line is the newest sample.
+
+The **Filtered | Raw** switch in the top right corner chooses what it
+shows: **Filtered** (the default) is the EEG after the **Filter** and
+**Notch** (and OSCAR, when it is on); **Raw** is the EEG as acquired,
+with each channel's mean over the 10 seconds removed so that the
+electrodes' large offsets do not push it out of its row.
 
 Below the channels, the **TRIG** row shows every trigger as a marker with
 its value, and a tick in the same colour crosses all channels at that
@@ -94,6 +103,32 @@ filter, so a channel is also bad when its raw signal swings by more than
 10 mV in that time, or when it only follows what all channels share. Hover
 over the viewer to see each channel's verdict and how much it varies, in
 microvolts.
+
+## Power spectrum
+
+The **Power Spectrum** panel on the right shows the power spectral
+density of the EEG from 0 to 100 Hz, the top of the gamma band (the
+headset measures up to 125 Hz at its 250 Hz sampling rate), averaged
+across the eight electrodes. It is
+Welch's estimate over the last 8 seconds, in 1-second segments (1 Hz
+resolution), updated twice a second, with power in dB relative to
+1 µV²/Hz: 10 dB more is ten times the power. Grey bands mark the EEG
+frequency bands: δ delta 0.5–4 Hz, θ theta 4–8 Hz, α alpha 8–13 Hz,
+β beta 13–30 Hz and γ gamma 30–100 Hz.
+
+Its own **Filtered | Raw** switch, in the panel's top right corner,
+chooses the EEG: **Filtered** (the default) is after the **Filter** and
+**Notch** (and OSCAR, when it is on), so their effect shows in the
+spectrum (the default 0.1–30 Hz filter leaves little above 30 Hz);
+**Raw** is the EEG as acquired, the whole band, where mains interference
+appears as a peak at 50 or 60 Hz. Because it averages
+the electrodes, one noisy electrode raises the whole curve; check the
+**Quality** column to find it.
+
+The panel is square by default, and stays square as the window is
+resized, leaving the data viewer at least half the width. Drag the bar
+between the panels to size it yourself, or untick **Spectrum** in the
+toolbar to hide it.
 
 ## Acquisition settings
 
@@ -121,9 +156,11 @@ command that switches the headset to it.
 Four loggers, each with its own switch, folder and file prefix:
 
 - **Raw Data CSV Logger** and **Raw Data BDF Logger** record the signal as
-  acquired, unfiltered. Default prefix `RhinoRawDataRecorder`.
+  acquired: no filter, no notch and no OSCAR. Default prefix
+  `RhinoRawDataRecorder`.
 - **Processed Data CSV Logger** and **Processed Data BDF Logger** record
-  the filtered EEG. Default prefix `RhinoRecorder`.
+  the EEG after OSCAR (when on), the filter and the notch. Default
+  prefix `RhinoRecorder`.
 
 Files are named `<prefix>_<YYYYMMDD>_<HHMMSS>.csv` or `.bdf`; the default
 folder is `Documents/RhinoRecorder`. All loggers start and stop at the
