@@ -8,7 +8,7 @@
 # provides the tested library versions and PySide6 for the icon.
 #
 # The app carries its own Python (a relocatable python-build-standalone
-# build, as uv installs them), RhinoRecorder, gpype_rhino and a prebuilt
+# build, as uv installs them), RhinoRecorder, gpype-rhino and a prebuilt
 # RhinoConnect helper. It does not carry g.Pype: the g.tec Non-Commercial
 # License forbids redistributing g.Pype as a standalone executable or
 # other bundled artefact. The app installs g.Pype and the other pinned
@@ -23,7 +23,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 OUT="${OUT:-$ROOT/dist}"
 DEV_PY="$ROOT/.venv/bin/python"
-GPYPE_RHINO_URL="https://github.com/itubrainlab/gpype_rhino"
+GPYPE_RHINO_URL="https://github.com/itubrainlab/gpype-rhino"
 
 [ -x "$DEV_PY" ] || { echo "Run pip install -e '.[test]' into .venv first." >&2; exit 1; }
 PYTHON_HOME="${PYTHON_HOME:-$(dirname "$(dirname "$(readlink -f "$(uv python find 3.12)")")")}"
@@ -34,7 +34,7 @@ VERSION="$("$DEV_PY" -c 'import rhino_recorder; print(rhino_recorder.__version__
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD)"
 git -C "$ROOT" diff --quiet HEAD -- src pyproject.toml packaging || COMMIT="$COMMIT-dirty"
 BUILD_ID="$VERSION-$COMMIT-$ARCH"
-# gpype_rhino at the commit the project's .venv was tested with.
+# gpype-rhino at the commit the project's .venv was tested with.
 GPYPE_RHINO_COMMIT="$("$DEV_PY" - <<'PY'
 import json, glob
 path = glob.glob(__import__("sysconfig").get_paths()["purelib"]
@@ -47,17 +47,17 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 APP="$OUT/Rhino Recorder.app"
 RES="$APP/Contents/Resources"
-echo "Building Rhino Recorder $BUILD_ID (gpype_rhino $GPYPE_RHINO_COMMIT)"
+echo "Building Rhino Recorder $BUILD_ID (gpype-rhino $GPYPE_RHINO_COMMIT)"
 
 # -- wheels -------------------------------------------------------------------
 mkdir -p "$WORK/wheels"
 uv build --quiet --wheel --out-dir "$WORK/wheels" "$ROOT"
-git clone --quiet "$GPYPE_RHINO_URL" "$WORK/gpype_rhino"
-git -C "$WORK/gpype_rhino" checkout --quiet "$GPYPE_RHINO_COMMIT"
-uv build --quiet --wheel --out-dir "$WORK/wheels" "$WORK/gpype_rhino"
+git clone --quiet "$GPYPE_RHINO_URL" "$WORK/gpype-rhino"
+git -C "$WORK/gpype-rhino" checkout --quiet "$GPYPE_RHINO_COMMIT"
+uv build --quiet --wheel --out-dir "$WORK/wheels" "$WORK/gpype-rhino"
 
 # -- pinned requirements, at the versions the tests ran with -----------------
-"$DEV_PY" - "$ROOT/pyproject.toml" "$WORK/gpype_rhino/pyproject.toml" \
+"$DEV_PY" - "$ROOT/pyproject.toml" "$WORK/gpype-rhino/pyproject.toml" \
     > "$WORK/requirements.in" <<'PY'
 import sys, tomllib
 for path in sys.argv[1:]:
@@ -84,7 +84,7 @@ cp "$WORK/requirements.txt" "$RES/requirements.txt"
 cp "$HERE/../bootstrap.py" "$RES/bootstrap.py"
 cp "$ROOT/LICENSE" "$RES/LICENSE"
 echo "$BUILD_ID" > "$RES/build-id"
-sh "$WORK/gpype_rhino/src/gpype_rhino/macos/build.sh" "$RES" >/dev/null
+sh "$WORK/gpype-rhino/src/gprhino/macos/build.sh" "$RES" >/dev/null
 "$DEV_PY" "$HERE/make_icns.py" "$ROOT/src/rhino_recorder/resources/rhino_recorder.svg" \
     "$RES/RhinoRecorder.icns" >/dev/null
 install -m 755 "$HERE/launcher.sh" "$APP/Contents/MacOS/RhinoRecorder"

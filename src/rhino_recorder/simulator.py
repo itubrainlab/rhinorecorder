@@ -4,7 +4,7 @@ headset.
 It is simulated at the byte level: :class:`SimulatedLink` stands in for
 the Bluetooth serial channel, answers the start and stop commands, and
 delivers 45-byte frames at 250 Hz in bursts, as the radio does. Everything
-above it -- gpype_rhino's decoder, its loss detection, the g.Pype source --
+above it -- gpype-rhino's decoder, its loss detection, the g.Pype source --
 is the real code.
 
 The signal: alpha (10 Hz) waxing and waning over background noise, a
@@ -22,8 +22,8 @@ import time
 from typing import Optional
 
 import numpy as np
-from gpype_rhino import RhinoHybridBlack, protocol
-from gpype_rhino.protocol import RhinoDevice
+from gprhino import RhinoHybridBlack, protocol
+from gprhino.protocol import RhinoDevice
 
 SIMULATED_SERIAL = "UN-SIMULATED"
 
@@ -85,7 +85,7 @@ class SignalModel:
 
 
 class SimulatedLink:
-    """Stands in for gpype_rhino's SerialLink and BridgeLink."""
+    """Stands in for gpype-rhino's SerialLink and BridgeLink."""
 
     def __init__(self, seed: Optional[int] = None):
         self.model = SignalModel(seed)
@@ -96,7 +96,7 @@ class SimulatedLink:
         self._thread: Optional[threading.Thread] = None
         self._counter = 0
 
-    # -- the link interface gpype_rhino uses -------------------------------
+    # -- the link interface gpype-rhino uses -------------------------------
 
     def open(self, timeout: float) -> None:
         pass
@@ -172,7 +172,7 @@ class SimulatedLink:
 
 def simulated_device(serial: str = SIMULATED_SERIAL,
                      seed: Optional[int] = None) -> RhinoDevice:
-    """A gpype_rhino RhinoDevice whose link is simulated."""
+    """A gpype-rhino RhinoDevice whose link is simulated."""
     device = RhinoDevice(serial, port="simulated", transport="serial")
     device._link = SimulatedLink(seed)
     return device

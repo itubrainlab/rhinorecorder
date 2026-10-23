@@ -1,7 +1,7 @@
 #!/bin/bash
 # Rhino Recorder.app's executable.
 #
-# The app carries its own Python, RhinoRecorder, gpype_rhino and the
+# The app carries its own Python, RhinoRecorder, gpype-rhino and the
 # RhinoConnect helper, but not g.Pype: the g.tec Non-Commercial License
 # does not allow g.Pype to be redistributed in a bundle. On first launch,
 # and after an update, bootstrap.py installs g.Pype and the other

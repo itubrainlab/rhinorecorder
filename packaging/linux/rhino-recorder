@@ -1,7 +1,7 @@
 #!/bin/sh
 # Start Rhino Recorder from its unpacked (or installed) folder.
 #
-# The folder carries its own Python, RhinoRecorder and gpype_rhino, but
+# The folder carries its own Python, RhinoRecorder and gpype-rhino, but
 # not g.Pype: the g.tec Non-Commercial License does not allow g.Pype to
 # be redistributed in a bundle. On first launch, and after an update,
 # bootstrap.py installs g.Pype and the other libraries from PyPI into

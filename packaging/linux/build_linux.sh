@@ -8,7 +8,7 @@
 # the tested library versions and PySide6 for the icon.
 #
 # The package carries its own Python (a relocatable python-build-standalone
-# build, which uv downloads), RhinoRecorder and gpype_rhino. It does not
+# build, which uv downloads), RhinoRecorder and gpype-rhino. It does not
 # carry g.Pype: the g.tec Non-Commercial License forbids redistributing
 # g.Pype as a standalone executable or other bundled artefact. The first
 # launch installs g.Pype and the other pinned libraries from PyPI (see
@@ -20,7 +20,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 OUT="${OUT:-$ROOT/dist}"
 DEV_PY="$ROOT/.venv/bin/python"
-GPYPE_RHINO_URL="https://github.com/itubrainlab/gpype_rhino"
+GPYPE_RHINO_URL="https://github.com/itubrainlab/gpype-rhino"
 PLATFORM="x86_64-manylinux_2_34"
 
 [ -x "$DEV_PY" ] || { echo "Run pip install -e '.[test]' into .venv first." >&2; exit 1; }
@@ -41,7 +41,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 NAME="RhinoRecorder-$VERSION-linux-x86_64"
 DIR="$WORK/$NAME"
-echo "Building Rhino Recorder $BUILD_ID (gpype_rhino $GPYPE_RHINO_COMMIT)"
+echo "Building Rhino Recorder $BUILD_ID (gpype-rhino $GPYPE_RHINO_COMMIT)"
 
 # -- Python -------------------------------------------------------------------
 uv python install --quiet --install-dir "$WORK/py" cpython-3.12-linux-x86_64-gnu
@@ -51,12 +51,12 @@ PYTHON_HOME="$(find "$WORK/py" -maxdepth 1 -type d -name 'cpython-3.12.*-linux-x
 # -- wheels (pure Python, so built here for any platform) ---------------------
 mkdir -p "$WORK/wheels"
 uv build --quiet --wheel --out-dir "$WORK/wheels" "$ROOT"
-git clone --quiet "$GPYPE_RHINO_URL" "$WORK/gpype_rhino"
-git -C "$WORK/gpype_rhino" checkout --quiet "$GPYPE_RHINO_COMMIT"
-uv build --quiet --wheel --out-dir "$WORK/wheels" "$WORK/gpype_rhino"
+git clone --quiet "$GPYPE_RHINO_URL" "$WORK/gpype-rhino"
+git -C "$WORK/gpype-rhino" checkout --quiet "$GPYPE_RHINO_COMMIT"
+uv build --quiet --wheel --out-dir "$WORK/wheels" "$WORK/gpype-rhino"
 
 # -- pinned requirements, at the versions the tests ran with -----------------
-"$DEV_PY" - "$ROOT/pyproject.toml" "$WORK/gpype_rhino/pyproject.toml" \
+"$DEV_PY" - "$ROOT/pyproject.toml" "$WORK/gpype-rhino/pyproject.toml" \
     > "$WORK/requirements.in" <<'PY'
 import sys, tomllib
 for path in sys.argv[1:]:

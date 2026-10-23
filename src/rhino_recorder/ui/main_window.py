@@ -238,10 +238,10 @@ class MainWindow(QMainWindow):
         except Exception:  # noqa: BLE001
             gpype_version = "?"
         try:
-            import gpype_rhino
-            driver = f"gpype_rhino {gpype_rhino.__version__}"
+            import gprhino
+            driver = f"gpype-rhino {gprhino.__version__}"
         except Exception:  # noqa: BLE001
-            driver = "gpype_rhino"
+            driver = "gpype-rhino"
         if self.choice.simulate:
             connection = "simulated"
         else:

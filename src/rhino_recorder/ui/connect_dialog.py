@@ -30,7 +30,7 @@ class Choice:
 def paired_devices() -> list[tuple[str, str, str]]:
     """(label, serial, port) of every paired headset found."""
     try:
-        from gpype_rhino import find_ports
+        from gprhino import find_ports
         ports = find_ports()
     except Exception:  # noqa: BLE001
         return []
@@ -56,7 +56,7 @@ def probe(choice: Choice) -> None:
     """
     if choice.simulate:
         return
-    from gpype_rhino import RhinoDevice
+    from gprhino import RhinoDevice
     device = RhinoDevice(choice.serial or None, port=choice.port or None,
                          transport=choice.transport or "auto")
     device.start()

@@ -64,7 +64,7 @@ def make_source(settings: Settings, simulate: bool, oscar: bool):
     if simulate:
         from .simulator import SimulatedHybridBlack
         return SimulatedHybridBlack(**common)
-    from gpype_rhino import RhinoHybridBlack
+    from gprhino import RhinoHybridBlack
     return RhinoHybridBlack(serial=settings.device.serial or None,
                             port=settings.device.port or None,
                             transport=settings.device.transport or "auto",

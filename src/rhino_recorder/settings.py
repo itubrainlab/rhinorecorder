@@ -59,7 +59,7 @@ def default_folder() -> str:
 
 @dataclass
 class Acquisition:
-    #: "electrode" or "test signal". gpype_rhino cannot switch the
+    #: "electrode" or "test signal". gpype-rhino cannot switch the
     #: headset to its test signal, so only "electrode" is offered.
     input_source: str = "electrode"
     accelerometer: bool = True
@@ -149,7 +149,7 @@ class Device:
     serial: str = ""
     #: Its serial port, where the name cannot find it (Linux).
     port: str = ""
-    #: "auto", "serial" or "bridge"; see gpype_rhino.RhinoDevice.
+    #: "auto", "serial" or "bridge"; see gprhino.RhinoDevice.
     transport: str = "auto"
 
 

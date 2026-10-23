@@ -15,7 +15,7 @@ from ..settings import Settings
 
 PAGES = ("Acquisition", "Recording", "Network", "Device")
 
-DRIVER_NOTE = ("gpype_rhino talks to the headset's Bluetooth serial "
+DRIVER_NOTE = ("gpype-rhino talks to the headset's Bluetooth serial "
                "channel directly. It does not implement the commands for "
                "the test signal, the digital outputs or the firmware "
                "version, so those are not available here.")
@@ -147,7 +147,7 @@ class SettingsView(QWidget):
             test.setEnabled(False)
             test.setToolTip(DRIVER_NOTE)
         source.setToolTip("The test signal is not available over "
-                          "gpype_rhino.")
+                          "gpype-rhino.")
         form.addRow("Input source:", source)
         form = _group(column, 
             "Include or exclude signals from data acquisition")
@@ -245,7 +245,7 @@ class SettingsView(QWidget):
             "Serial number": info.get("serial") or "(first paired headset)",
             "Device": "Unicorn Hybrid Black",
             "Connection": info.get("connection", ""),
-            "Firmware version": "not reported by gpype_rhino",
+            "Firmware version": "not reported by gpype-rhino",
             "Driver version": info.get("driver", ""),
             "g.Pype version": info.get("gpype", ""),
             "RhinoRecorder version": __version__,

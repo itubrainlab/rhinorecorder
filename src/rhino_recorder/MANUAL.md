@@ -3,7 +3,7 @@
 Rhino Recorder acquires, shows, records and streams data from the g.tec
 **Unicorn Hybrid Black**. It works like g.tec's Unicorn Recorder, on
 Windows, macOS and Linux, and is built on [g.Pype](https://gpype.gtec.at)
-with the licence-free [gpype_rhino](https://github.com/itubrainlab/gpype_rhino)
+with the licence-free [gpype-rhino](https://github.com/itubrainlab/gpype-rhino)
 Bluetooth driver.
 
 ## Opening a device
@@ -21,7 +21,7 @@ Rhino Recorder connects once to check that the headset answers. If it
 does not, make sure it is switched on, in range and paired.
 
 On macOS the connection goes through a small helper app, RhinoConnect,
-which gpype_rhino builds the first time (it needs the Xcode command line
+which gpype-rhino builds the first time (it needs the Xcode command line
 tools). macOS asks once for Bluetooth access.
 
 ## Toolbar
@@ -113,7 +113,7 @@ Indicator, Timing. The channel order is:
 | 19 | TRIG | Trigger value, 0 when there is none (Unicorn Recorder calls this channel STATUS) |
 
 Channels that are excluded are left out and the others move up. The test
-signal input source is not available: gpype_rhino does not implement the
+signal input source is not available: gpype-rhino does not implement the
 command that switches the headset to it.
 
 ## Recording settings
@@ -168,7 +168,7 @@ The trigger input port must differ from the output ports.
 ## Device settings
 
 Shows the headset's name, the connection and the software versions. The
-firmware version and the digital outputs are not available: gpype_rhino
+firmware version and the digital outputs are not available: gpype-rhino
 does not implement those commands.
 
 ## Using Rhino Recorder in an experiment

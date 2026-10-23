@@ -1,4 +1,4 @@
-"""End to end on the simulated headset: the real gpype_rhino decoder, the
+"""End to end on the simulated headset: the real gpype-rhino decoder, the
 real g.Pype pipeline, real files and sockets."""
 import os
 import socket
