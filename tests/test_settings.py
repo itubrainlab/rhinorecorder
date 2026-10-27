@@ -115,3 +115,15 @@ def test_old_default_ports_are_migrated(tmp_path):
     net = Settings.load(path).network
     assert (net.trigger_in.port, net.processed_udp.port,
             net.raw_udp.port) == (10000, 10001, 5555)
+
+
+def test_bluetooth_latency(tmp_path):
+    assert Settings().device.latency_ms == 40.0
+    path = tmp_path / "settings.json"
+    data = Settings().to_dict()
+    data["device"]["latency_ms"] = 32            # an int, as typed in JSON
+    path.write_text(json.dumps(data))
+    assert Settings.load(path).device.latency_ms == 32.0
+    del data["device"]["latency_ms"]             # a file from 0.2.0
+    path.write_text(json.dumps(data))
+    assert Settings.load(path).device.latency_ms == 40.0

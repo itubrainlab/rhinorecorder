@@ -25,6 +25,9 @@ _OLD_DISPLAY = ("1 – 30 Hz", False)
 #: The default ports of settings files before version 3: trigger input,
 #: processed and raw UDP output.
 _OLD_PORTS = (1000, 1001, 1002)
+#: Bluetooth delay of the Unicorn Hybrid Black, in ms: g.tec's figure,
+#: gpype-rhino's default (RhinoHybridBlack.DEVICE_LATENCY_MS).
+DEFAULT_LATENCY_MS = 40.0
 #: Bumped when a settings file needs migrating on load.
 SETTINGS_VERSION = 3
 
@@ -159,6 +162,12 @@ class Device:
     port: str = ""
     #: "auto", "serial", "bluetooth" or "bridge"; see gprhino.RhinoDevice.
     transport: str = "auto"
+    #: Bluetooth delay from a scan being acquired to it reaching this
+    #: computer, in ms. gpype-rhino subtracts it from the EEG's time
+    #: stamps so triggers line up with the EEG they happened during. 40 ms
+    #: is g.tec's figure for this headset; measure your own setup with an
+    #: external reference (a photodiode or click wired into a channel).
+    latency_ms: float = DEFAULT_LATENCY_MS
 
 
 @dataclass
@@ -264,6 +273,8 @@ def _build(kind, data, default=None):
         value = data.get(f.name, current)
         if dataclasses.is_dataclass(current):
             value = _build(type(current), value, current)
+        elif isinstance(current, float) and type(value) is int:
+            value = float(value)
         elif type(value) is not type(current):
             # bool is an int, and "1000" is not a port: types must match.
             value = current

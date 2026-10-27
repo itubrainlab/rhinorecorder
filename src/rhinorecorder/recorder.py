@@ -66,6 +66,9 @@ def make_source(settings: Settings, simulate: bool, oscar: bool):
     common = dict(include_accel=True, include_gyro=True, include_aux=True,
                   frame_size=FRAME_SIZE, enable_oscar=oscar, name="rhino")
     from .sources import HeadsetSource, SimulatedSource
+    # The Bluetooth delay gpype-rhino takes off the EEG's time stamps, so
+    # triggers line up with the EEG they happened during.
+    common["latency_ms"] = settings.device.latency_ms
     if simulate:
         return SimulatedSource(**common)
     return HeadsetSource(serial=settings.device.serial or None,

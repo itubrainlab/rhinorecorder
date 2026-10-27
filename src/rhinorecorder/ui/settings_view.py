@@ -5,13 +5,22 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItemModel
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog,
-                               QFormLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLineEdit, QPushButton, QScrollArea, QSpinBox,
-                               QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox,
+                               QFileDialog, QFormLayout, QGroupBox,
+                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QScrollArea, QSpinBox, QTabWidget,
+                               QVBoxLayout, QWidget)
 
 from .. import __version__
 from ..settings import Settings
+
+LATENCY_NOTE = ("How long a sample takes from the headset to this "
+                "computer. It is taken off the EEG's time stamps so that "
+                "triggers line up with the EEG they happened during. 40 ms "
+                "is g.tec's figure for the Unicorn Hybrid Black; your "
+                "computer and Bluetooth adapter may differ, which only an "
+                "external reference can measure, e.g. a photodiode or an "
+                "audio click wired into an EEG channel at a known trigger.")
 
 PAGES = ("Acquisition", "Recording", "Network", "Device")
 
@@ -49,6 +58,18 @@ def _text(obj, attr: str, width: int | None = None) -> QLineEdit:
         edit.setFixedWidth(width)
     edit.textChanged.connect(lambda text: setattr(obj, attr, text))
     return edit
+
+
+def _milliseconds(obj, attr: str, maximum: float = 500.0) -> QDoubleSpinBox:
+    spin = QDoubleSpinBox()
+    spin.setRange(0.0, maximum)
+    spin.setDecimals(1)
+    spin.setSingleStep(1.0)
+    spin.setSuffix(" ms")
+    spin.setValue(getattr(obj, attr))
+    spin.setFixedWidth(140)
+    spin.valueChanged.connect(lambda value: setattr(obj, attr, value))
+    return spin
 
 
 def _port(obj, attr: str) -> QSpinBox:
@@ -227,6 +248,13 @@ class SettingsView(QWidget):
             self._info_labels[key] = label
             form.addRow(f"{key}:", label)
         self.refresh_device()
+        form = _group(column, "Timing")
+        form.addRow("Bluetooth latency", _milliseconds(self.settings.device,
+                                                       "latency_ms"))
+        note = QLabel(LATENCY_NOTE)
+        note.setWordWrap(True)
+        note.setObjectName("Note")
+        column.addWidget(note)
         form = _group(column, "Digital outputs")
         for i in range(8):
             toggle = QCheckBox("OFF")

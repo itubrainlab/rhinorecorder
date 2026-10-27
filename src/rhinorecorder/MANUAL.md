@@ -207,6 +207,19 @@ Shows the headset's name, the connection and the software versions. The
 firmware version and the digital outputs are not available: gpype-rhino
 does not implement those commands.
 
+**Bluetooth latency** (Timing) is how long a sample takes from the
+headset to this computer, 40 ms by default: g.tec's figure for the
+Unicorn Hybrid Black. Triggers are time-stamped when they arrive, and
+EEG samples arrive late by this delay and in bursts, so gpype-rhino
+stamps each sample with when it was acquired: its burst's arrival, less
+its place in the burst, less this latency. A trigger then lands on the
+sample acquired when it was sent; on a simulated headset that delivers
+bursts 40 ms late, within a sample (3 ms early on average, against 44 ms
+early without the correction). Your computer and Bluetooth adapter may
+have a different delay, which only an external reference can measure,
+e.g. a photodiode or an audio click wired into an EEG channel at a known
+trigger; enter what you measure here.
+
 ## Using Rhino Recorder in an experiment
 
 A stimulus program sends a trigger over UDP at each event; Rhino Recorder

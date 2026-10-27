@@ -3,7 +3,8 @@ headset.
 
 It is simulated at the byte level: :class:`SimulatedLink` stands in for
 the Bluetooth serial channel, answers the start and stop commands, and
-delivers 45-byte frames at 250 Hz in bursts, as the radio does. Everything
+delivers 45-byte frames at 250 Hz in bursts of 8 that reach the host
+40 ms after they were acquired, as the radio does. Everything
 above it -- gpype-rhino's decoder, its loss detection, the g.Pype source --
 is the real code.
 
@@ -22,6 +23,7 @@ import time
 from typing import Optional
 
 import numpy as np
+from gpype.common._private import channels
 from gprhino import RhinoHybridBlack, protocol
 from gprhino.protocol import RhinoDevice
 
@@ -29,6 +31,13 @@ SIMULATED_SERIAL = "UN-SIMULATED"
 
 #: Fraction of frames the simulated radio loses.
 LOSS_RATE = 1 / 4000
+#: Scans per Bluetooth burst, and how long after its last scan was acquired
+#: a burst reaches the host: the radio's behaviour as gpype-rhino models
+#: it, its 40 ms being g.tec's figure for this headset.
+BURST_SCANS = 8
+LINK_DELAY_S = 0.040
+#: Up to this much more delay, at random, per burst.
+LINK_JITTER_S = 0.005
 
 
 def encode(counter: int, eeg_uv: np.ndarray, accel_g: np.ndarray,
@@ -54,7 +63,9 @@ class SignalModel:
 
     def __init__(self, seed: Optional[int] = None):
         self.rng = np.random.default_rng(seed)
-        self.offsets = self.rng.uniform(-30000, 30000, protocol.NUM_EEG)
+        # Dry electrodes sit at a large offset, never near zero.
+        self.offsets = (self.rng.choice([-1, 1], protocol.NUM_EEG)
+                        * self.rng.uniform(5000, 30000, protocol.NUM_EEG))
         self.alpha_phase = self.rng.uniform(0, 2 * np.pi, protocol.NUM_EEG)
         self.alpha_gain = np.array([0.5, 0.7, 0.8, 0.7, 1.0, 1.2, 1.4, 1.2])
         self.noise_sd = np.full(protocol.NUM_EEG, 3.0)
@@ -95,6 +106,9 @@ class SimulatedLink:
         self._streaming = False
         self._thread: Optional[threading.Thread] = None
         self._counter = 0
+        #: perf_counter() at which scan 0 was acquired; scan k was
+        #: acquired k / SAMPLING_RATE later. None until streaming starts.
+        self.started_at: Optional[float] = None
 
     # -- the link interface gpype-rhino uses -------------------------------
 
@@ -148,13 +162,19 @@ class SimulatedLink:
                 thread.join(timeout=1)
 
     def _run(self) -> None:
-        start = time.perf_counter()
+        start = self.started_at = time.perf_counter()
         sent = 0
         rng = self.model.rng
         while self._streaming:
-            due = int((time.perf_counter() - start) * protocol.SAMPLING_RATE)
+            # The next burst: BURST_SCANS scans, delivered LINK_DELAY_S
+            # (plus jitter) after the last of them was acquired.
+            last = sent + BURST_SCANS - 1
+            due = (start + last / protocol.SAMPLING_RATE + LINK_DELAY_S
+                   + rng.uniform(0, LINK_JITTER_S))
+            while self._streaming and time.perf_counter() < due:
+                time.sleep(min(0.002, max(0.0, due - time.perf_counter())))
             frames = []
-            while sent < due:
+            for _ in range(BURST_SCANS):
                 eeg, accel, gyro = self.model.scan(self._counter)
                 if self._counter % (protocol.SAMPLING_RATE * 120) == 0 \
                         and self._counter and self.battery > 1:
@@ -164,16 +184,18 @@ class SimulatedLink:
                                          self.battery))
                 self._counter += 1
                 sent += 1
-            if frames:
+            if frames and self._streaming:
                 self._feed(b"".join(frames))
-            # Bluetooth delivers in bursts of a few frames.
-            time.sleep(rng.uniform(0.008, 0.03))
 
 
 def simulated_device(serial: str = SIMULATED_SERIAL,
-                     seed: Optional[int] = None) -> RhinoDevice:
-    """A gpype-rhino RhinoDevice whose link is simulated."""
-    device = RhinoDevice(serial, port="simulated", transport="serial")
+                     seed: Optional[int] = None,
+                     clock=channels.stamp_clock) -> RhinoDevice:
+    """A gpype-rhino RhinoDevice whose link is simulated. Its scans are
+    stamped on ``clock``: g.Pype's, as RhinoHybridBlack's own device's
+    are, so triggers can be placed against them."""
+    device = RhinoDevice(serial, port="simulated", transport="serial",
+                         clock=clock)
     device._link = SimulatedLink(seed)
     return device
 

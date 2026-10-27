@@ -65,6 +65,10 @@ choose it in the device list.
   ACC, GYR, CNT, BAT, VALID, DT, TRIG).
 - **Network**: a UDP trigger input into the TRIG channel; raw and
   processed outputs over UDP and LSL.
+- **Timing**: triggers land on the EEG sample acquired when they were
+  sent. gpype-rhino stamps each sample with its acquisition time,
+  correcting for Bluetooth bursts and the link's delay (40 ms by default,
+  adjustable in the Device settings).
 - **Status**: wireless data loss, network interfaces and battery.
 
 The user manual is in the app (the **?** button) and in

@@ -284,3 +284,50 @@ def test_processed_eeg_starts_settled_with_oscar(recorder, settings):
     _, header, data = read_csv(recorder.recording_paths[0])
     assert len(data) > 250
     assert np.abs(data[:, :8]).max() < 500
+
+
+def trigger_offsets(recorder, settings, count=8):
+    """Send triggers at known instants and return, for each, how far the
+    sample it landed on is from the sample the simulated headset acquired
+    at that instant, in samples: negative is early."""
+    link = recorder.graph.source._device._link
+    port = settings.network.trigger_in.port
+    sent = []
+    rng = np.random.default_rng(3)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as tx:
+        time.sleep(1.5)
+        for value in range(1, count + 1):
+            sent.append((value, time.perf_counter()))
+            tx.sendto(str(value).encode("ascii"), ("127.0.0.1", port))
+            time.sleep(rng.uniform(0.2, 0.4))
+    time.sleep(1.0)
+    tap = recorder.graph.status
+    data = tap.latest(tap.capacity)
+    offsets = []
+    for value, instant in sent:
+        rows = np.flatnonzero(data[:, layout.TRIGGER_CHANNEL] == value)
+        assert len(rows) == 1, f"trigger {value} landed {len(rows)} times"
+        acquired = (instant - link.started_at) * layout.SAMPLING_RATE
+        offsets.append(data[rows[0], layout.CNT] - acquired)
+    return np.array(offsets)
+
+
+@pytest.mark.parametrize("oscar", [False, True])
+def test_triggers_line_up_with_the_eeg(recorder, settings, oscar):
+    """The simulated headset delivers bursts of 8 scans 40 ms late, as
+    gpype-rhino models the radio; with the latency it takes off the time
+    stamps, a trigger lands on the scan acquired when it was sent."""
+    settings.display.oscar = oscar
+    recorder.start()
+    offsets = trigger_offsets(recorder, settings)
+    assert np.all(np.abs(offsets) <= 3), offsets        # within 12 ms
+
+
+def test_without_latency_compensation_triggers_land_early(recorder,
+                                                          settings):
+    """Stamped on arrival, as before gpype-rhino 0.2.0, a trigger lands
+    on a scan acquired the link's 40 ms earlier: 10 samples early."""
+    settings.device.latency_ms = 0
+    recorder.start()
+    offsets = trigger_offsets(recorder, settings)
+    assert -13 <= np.median(offsets) <= -7, offsets
