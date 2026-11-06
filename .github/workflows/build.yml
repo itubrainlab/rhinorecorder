@@ -90,7 +90,7 @@ jobs:
 
   macos:
     name: Build and check the macOS app
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
