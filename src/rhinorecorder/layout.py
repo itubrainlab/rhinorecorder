@@ -63,7 +63,7 @@ VALID = INDEX["VALID"]
 DT = INDEX["DT"]
 TRIGGER_CHANNEL = INDEX["TRIG"]
 
-#: Columns of the gpype-rhino scan, as RhinoHybridBlack emits them with
+#: Columns of the headset's scan, as g.Pype's HybridBlack emits them with
 #: accelerometer, gyroscope and aux all included: EEG, accel, gyro,
 #: battery, counter, validation.
 RHINO_COLUMNS = {

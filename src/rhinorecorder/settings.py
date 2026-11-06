@@ -25,8 +25,8 @@ _OLD_DISPLAY = ("1 – 30 Hz", False)
 #: The default ports of settings files before version 3: trigger input,
 #: processed and raw UDP output.
 _OLD_PORTS = (1000, 1001, 1002)
-#: Bluetooth delay of the Unicorn Hybrid Black, in ms: g.tec's figure,
-#: gpype-rhino's default (RhinoHybridBlack.DEVICE_LATENCY_MS).
+#: Bluetooth delay of the Unicorn Hybrid Black, in ms: g.tec's figure
+#: (HybridBlack.DEVICE_DELAY_MS in g.Pype).
 DEFAULT_LATENCY_MS = 40.0
 #: Bumped when a settings file needs migrating on load.
 SETTINGS_VERSION = 3
@@ -67,8 +67,8 @@ def default_folder() -> str:
 
 @dataclass
 class Acquisition:
-    #: "electrode" or "test signal". gpype-rhino cannot switch the
-    #: headset to its test signal, so only "electrode" is offered.
+    #: "electrode", or "test signal": the headset's internal rectangular
+    #: test signal on every EEG channel.
     input_source: str = "electrode"
     accelerometer: bool = True
     gyroscope: bool = True
@@ -155,15 +155,11 @@ class Display:
 
 @dataclass
 class Device:
-    #: The headset's Bluetooth name, e.g. UN-2024.08.41.
+    #: The headset's serial, e.g. UN-2024.08.41; empty for the first
+    #: one found.
     serial: str = ""
-    #: Its serial port, where the name cannot find it (Windows), or a
-    #: /dev/rfcommN bound by hand (Linux).
-    port: str = ""
-    #: "auto", "serial", "bluetooth" or "bridge"; see gprhino.RhinoDevice.
-    transport: str = "auto"
     #: Bluetooth delay from a scan being acquired to it reaching this
-    #: computer, in ms. gpype-rhino subtracts it from the EEG's time
+    #: computer, in ms. Rhino Recorder subtracts it from the EEG's time
     #: stamps so triggers line up with the EEG they happened during. 40 ms
     #: is g.tec's figure for this headset; measure your own setup with an
     #: external reference (a photodiode or click wired into a channel).
@@ -280,6 +276,9 @@ def _build(kind, data, default=None):
             value = current
         values[f.name] = value
     result = kind(**values)
+    if isinstance(result, Acquisition) and \
+            result.input_source not in ("electrode", "test signal"):
+        result.input_source = "electrode"
     # Presets renamed or removed since the file was written fall back.
     if isinstance(result, Display):
         if result.filter not in presets.FILTERS:

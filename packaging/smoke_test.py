@@ -17,7 +17,6 @@ sys.path.insert(0, sys.argv[1])
 EXPECTED = sys.argv[2]
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
-import gprhino  # noqa: E402
 import gpype  # noqa: E402
 import numpy as np  # noqa: E402
 import rhinorecorder  # noqa: E402
@@ -30,8 +29,13 @@ from rhinorecorder.simulator import SIMULATED_SERIAL  # noqa: E402
 from rhinorecorder.ui.connect_dialog import Choice  # noqa: E402
 from rhinorecorder.ui.main_window import MainWindow  # noqa: E402
 
-print(f"Rhino Recorder {rhinorecorder.__version__}, gpype-rhino "
-      f"{gprhino.__version__}, g.Pype {gpype.__version__}, Python "
+try:
+    import gtec_unicorn
+    driver = f"gtec-unicorn {gtec_unicorn.__version__}"
+except (ImportError, OSError) as error:
+    sys.exit(f"gtec-unicorn is not installed or does not load: {error}")
+print(f"Rhino Recorder {rhinorecorder.__version__}, {driver}, "
+      f"g.Pype {gpype.__version__}, Python "
       f"{sys.version.split()[0]} on {sys.platform}", flush=True)
 assert rhinorecorder.__version__ == EXPECTED, rhinorecorder.__version__
 
@@ -51,7 +55,7 @@ for logger in settings.recording.loggers().values():
     logger.folder = folder
 
 app = QApplication([])
-window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+window = MainWindow(settings, Choice(SIMULATED_SERIAL, True))
 window._save_settings = lambda: None
 window.show()
 app.processEvents()

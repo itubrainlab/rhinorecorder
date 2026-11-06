@@ -1,12 +1,15 @@
 #!/bin/bash
 # Rhino Recorder.app's executable.
 #
-# The app carries its own Python, RhinoRecorder, gpype-rhino and the
-# RhinoConnect helper, but not g.Pype: the g.tec Non-Commercial License
-# does not allow g.Pype to be redistributed in a bundle. On first launch,
-# and after an update, bootstrap.py installs g.Pype and the other
-# libraries from PyPI into ~/Library/Application Support/RhinoRecorder.
+# The app carries its own Python and RhinoRecorder, but not
+# g.Pype or g.tec's gtec-unicorn driver: their g.tec Non-Commercial Licenses do not
+# allow them to be redistributed in a bundle. On first launch, and after
+# an update, bootstrap.py installs them and the other libraries from PyPI into ~/Library/Application Support/RhinoRecorder.
 set -u
+
+# This app declares Bluetooth use, so Rhino Recorder need not relaunch
+# itself to get it (see rhinorecorder/macos.py).
+export RHINORECORDER_BUNDLED=1
 
 CONTENTS="$(cd "$(dirname "$0")/.." && pwd)"
 RES="$CONTENTS/Resources"

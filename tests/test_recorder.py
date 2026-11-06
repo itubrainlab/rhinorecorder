@@ -1,4 +1,4 @@
-"""End to end on the simulated headset: the real gpype-rhino decoder, the
+"""End to end on the simulated headset: g.Pype's real HybridBlack, the
 real g.Pype pipeline, real files and sockets."""
 import os
 import socket
@@ -290,7 +290,7 @@ def trigger_offsets(recorder, settings, count=8):
     """Send triggers at known instants and return, for each, how far the
     sample it landed on is from the sample the simulated headset acquired
     at that instant, in samples: negative is early."""
-    link = recorder.graph.source._device._link
+    device = recorder.graph.source._device
     port = settings.network.trigger_in.port
     sent = []
     rng = np.random.default_rng(3)
@@ -307,7 +307,7 @@ def trigger_offsets(recorder, settings, count=8):
     for value, instant in sent:
         rows = np.flatnonzero(data[:, layout.TRIGGER_CHANNEL] == value)
         assert len(rows) == 1, f"trigger {value} landed {len(rows)} times"
-        acquired = (instant - link.started_at) * layout.SAMPLING_RATE
+        acquired = (instant - device.started_at) * layout.SAMPLING_RATE
         offsets.append(data[rows[0], layout.CNT] - acquired)
     return np.array(offsets)
 
@@ -315,7 +315,7 @@ def trigger_offsets(recorder, settings, count=8):
 @pytest.mark.parametrize("oscar", [False, True])
 def test_triggers_line_up_with_the_eeg(recorder, settings, oscar):
     """The simulated headset delivers bursts of 8 scans 40 ms late, as
-    gpype-rhino models the radio; with the latency it takes off the time
+    the radio delivers them; with the latency taken off the time
     stamps, a trigger lands on the scan acquired when it was sent."""
     settings.display.oscar = oscar
     recorder.start()
@@ -325,9 +325,41 @@ def test_triggers_line_up_with_the_eeg(recorder, settings, oscar):
 
 def test_without_latency_compensation_triggers_land_early(recorder,
                                                           settings):
-    """Stamped on arrival, as before gpype-rhino 0.2.0, a trigger lands
+    """Stamped on arrival, as g.Pype's HybridBlack stamps, a trigger lands
     on a scan acquired the link's 40 ms earlier: 10 samples early."""
     settings.device.latency_ms = 0
     recorder.start()
     offsets = trigger_offsets(recorder, settings)
     assert -13 <= np.median(offsets) <= -7, offsets
+
+
+def test_test_signal_is_a_square_wave(recorder, settings):
+    from rhinorecorder import simulator
+    settings.acquisition.input_source = "test signal"
+    recorder.start()
+    time.sleep(2.5)
+    eeg = recorder.graph.status.latest(500)[:, :8]
+    # Every electrode carries the same two levels, nothing in between.
+    assert np.allclose(eeg, eeg[:, :1])
+    assert set(np.unique(eeg)) == {simulator.TEST_SIGNAL_LOW_UV,
+                                   simulator.TEST_SIGNAL_HIGH_UV}
+    # Each level lasts half of the 128-scan period.
+    edges = np.flatnonzero(np.diff(eeg[:, 0]))
+    assert len(edges) >= 2
+    assert set(np.diff(edges)) == {simulator.TEST_SIGNAL_PERIOD_SCANS // 2}
+
+
+def test_lost_scans_are_counted_from_the_validation_channel(
+        recorder, monkeypatch):
+    from rhinorecorder import simulator
+    monkeypatch.setattr(simulator, "LOSS_RATE", 0.05)
+    recorder.start()
+    time.sleep(2.0)
+    data = recorder.graph.status.latest(recorder.graph.status.capacity)
+    invalid = int(np.count_nonzero((data[:, layout.VALID] == 0)
+                                   & (data[:, layout.CNT] != 0)))
+    assert invalid > 10
+    assert abs(recorder.lost_scans - invalid) <= 5   # a few in flight
+    assert recorder.device_info == {"serial_number": "UN-SIMULATED",
+                                    "firmware_version": "simulated",
+                                    "device_version": "simulated"}

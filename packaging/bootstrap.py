@@ -3,9 +3,8 @@
     bootstrap.py <app resources folder> <library folder>
 
 Installs the pinned libraries (requirements.txt: g.Pype, PySide6, ...)
-from PyPI, then the bundled RhinoRecorder and gpype-rhino wheels, into
-the library folder, and on macOS puts the prebuilt RhinoConnect helper
-where gpype-rhino looks for it. A small window shows progress; without a
+from PyPI, then the bundled RhinoRecorder wheel, into the library
+folder. A small window shows progress; without a
 display, progress goes to the terminal. The folder is
 named after the build, so an updated app sets up a fresh one; older
 ones are removed once the new one is complete.
@@ -58,10 +57,6 @@ def install(report) -> None:
         wheels = sorted(str(p) for p in (RES / "wheels").glob("*.whl"))
         for line in pip(log, "--no-deps", *wheels):
             pass
-    helper = RES / "RhinoConnect.app"
-    if helper.exists():
-        target = LIB / "gprhino" / "macos" / "RhinoConnect.app"
-        shutil.copytree(helper, target, symlinks=True, dirs_exist_ok=True)
     (LIB / ".complete").write_text("")
     for old in RUNTIME.iterdir():
         if old.is_dir() and old != LIB:

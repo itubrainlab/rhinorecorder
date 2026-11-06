@@ -126,8 +126,6 @@ class MainWindow(QMainWindow):
         if not choice.simulate:
             # The window acquires from the headset it was opened for.
             settings.device.serial = choice.serial
-            settings.device.port = choice.port
-            settings.device.transport = choice.transport
         self.recorder = Recorder(settings, simulate=choice.simulate)
         self.quality = quality.SignalQuality()
         self._quality_seen = 0
@@ -332,17 +330,12 @@ class MainWindow(QMainWindow):
         except Exception:  # noqa: BLE001
             gpype_version = "?"
         try:
-            import gprhino
-            driver = f"gpype-rhino {gprhino.__version__}"
+            import gtec_unicorn
+            driver = (f"gtec-unicorn {gtec_unicorn.__version__} (native "
+                      f"API {gtec_unicorn.Amplifier.get_api_version()})")
         except Exception:  # noqa: BLE001
-            driver = "gpype-rhino"
-        if self.choice.simulate:
-            connection = "simulated"
-        else:
-            parts = [self.choice.transport]
-            if self.choice.port:
-                parts.append(self.choice.port)
-            connection = ", ".join(parts)
+            driver = "gtec-unicorn (not available on this platform)"
+        connection = "simulated" if self.choice.simulate else "Bluetooth"
         return {"serial": self.choice.serial, "connection": connection,
                 "driver": driver, "gpype": gpype_version}
 
@@ -483,8 +476,11 @@ class MainWindow(QMainWindow):
         else:
             self._awake.hold()
         if state == RUNNING:
+            info = self.recorder.device_info
             self.settings_view.refresh_device(
-                serial=self.recorder.device_serial)
+                serial=self.recorder.device_serial,
+                firmware_version=info.get("firmware_version", ""),
+                device_version=info.get("device_version", ""))
         if state == STARTING:
             self._losses.clear()
             self.quality.reset()

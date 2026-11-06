@@ -2,7 +2,6 @@
 
     rhino-recorder                      choose a headset, then record
     rhino-recorder --device UN-2024.08.41
-    rhino-recorder --port COM5          (Windows)
     rhino-recorder --simulate           no headset needed
 """
 from __future__ import annotations
@@ -18,13 +17,9 @@ def parse_args(argv=None) -> argparse.Namespace:
         prog="rhino-recorder",
         description="Acquire, view, record and stream EEG from the g.tec "
                     "Unicorn Hybrid Black.")
-    parser.add_argument("--device", metavar="NAME",
-                        help="the headset's Bluetooth name, e.g. "
-                             "UN-2024.08.41; skips the device dialog")
-    parser.add_argument("--port", help="the headset's serial port, e.g. "
-                                       "COM5; not needed on Linux or macOS")
-    parser.add_argument("--transport", choices=["auto", "serial", "bluetooth", "bridge"],
-                        default=None)
+    parser.add_argument("--device", metavar="SERIAL",
+                        help="the headset's serial, e.g. UN-2024.08.41; "
+                             "skips the device dialog")
     parser.add_argument("--simulate", action="store_true",
                         help="use a simulated headset")
     parser.add_argument("--version", action="version",
@@ -34,6 +29,13 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 def main(argv=None) -> int:
     args = parse_args(argv)
+
+    from . import macos
+    if not args.simulate and macos.needs_relaunch():
+        # macOS ends a process that uses Bluetooth for an app that does not
+        # declare it, which a terminal does not; see macos.py.
+        return macos.relaunch_with_bluetooth(
+            sys.argv[1:] if argv is None else list(argv))
 
     from PySide6.QtWidgets import QApplication
 
@@ -54,13 +56,10 @@ def main(argv=None) -> int:
     choice = None
     if args.simulate:
         from .simulator import SIMULATED_SERIAL
-        choice = Choice(SIMULATED_SERIAL, "", "auto", True)
-    elif args.device or args.port:
-        choice = Choice(args.device or "", args.port or "",
-                        args.transport or settings.device.transport, False)
+        choice = Choice(SIMULATED_SERIAL, True)
+    elif args.device:
+        choice = Choice(args.device, False)
         settings.device.serial = choice.serial
-        settings.device.port = choice.port
-        settings.device.transport = choice.transport
 
     # The device dialog comes back after every disconnect, as Unicorn
     # Suite does, until the user quits it.

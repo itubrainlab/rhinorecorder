@@ -22,13 +22,9 @@ Remove it with uninstall.cmd (settings and recordings are kept).
 
 The headset
 -----------
-Pair it in Settings -> Bluetooth & devices. Windows gives it a serial
-(COM) port, and Rhino Recorder's device dialog lists the headset with
-it, e.g. "UN-2024.10.18 (COM5)". If it is not listed, find the port
-under "More Bluetooth settings" (Windows 11: Settings -> Bluetooth &
-devices -> Devices -> More Bluetooth settings), on the COM Ports tab, as
-the Outgoing port for the headset, and enter it (e.g. COM5) as the
-serial port.
+Pair it in Settings -> Bluetooth & devices. Rhino Recorder's device
+dialog then lists it by its serial, e.g. "UN-2024.10.18", and g.tec's
+gtec-unicorn driver connects to it directly.
 
 Triggers
 --------
@@ -42,4 +38,6 @@ Licence
 Rhino Recorder is MIT licensed (LICENSE). g.Pype, which the first launch
 installs from PyPI, is under the g.tec Non-Commercial License: free for
 private and educational use with a g.tec amplifier; commercial use needs
-a licence from g.tec. This package does not contain g.Pype.
+a licence from g.tec. The headset's driver, gtec-unicorn, also
+installed from PyPI, is under an earlier version of that licence, to be
+used only as part of g.Pype. This package contains neither.

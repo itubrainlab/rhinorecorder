@@ -3,26 +3,23 @@
 Rhino Recorder acquires, shows, records and streams data from the g.tec
 **Unicorn Hybrid Black**. It works like g.tec's Unicorn Recorder, on
 Windows, macOS and Linux, and is built on [g.Pype](https://gpype.gtec.at)
-with the licence-free [gpype-rhino](https://github.com/itubrainlab/gpype-rhino)
-Bluetooth driver.
+with g.tec's licence-free [gtec-unicorn](https://pypi.org/project/gtec-unicorn/)
+driver.
 
 ## Opening a device
 
-Pair the headset in the system's Bluetooth settings first.
+Switch the headset on. On Windows, pair it in Settings → Bluetooth &
+devices first.
 
-When Rhino Recorder starts, it lists the paired headsets it can find.
-Choose one, or type its name (for example `UN-2024.08.41`), and press
-**Open**. On Windows, enter its COM port if it is not listed. On Linux
-the headset is found by name among the paired devices, with no serial
-port, `rfcomm bind` or `dialout` group needed; its Bluetooth address
-works as a name too. **Simulated device** runs without a headset.
+When Rhino Recorder starts, it lists the headsets it can open by their
+serial (for example `UN-2024.08.41`): on Windows the paired ones, on
+macOS and Linux those in range, found by a Bluetooth search that takes a
+few seconds. **Search again** repeats it. Choose one, or type its serial,
+and press **Open**. **Simulated device** runs without a headset.
 
 Rhino Recorder connects once to check that the headset answers. If it
-does not, make sure it is switched on, in range and paired.
-
-On macOS the connection goes through a small helper app, RhinoConnect,
-which gpype-rhino builds the first time (it needs the Xcode command line
-tools). macOS asks once for Bluetooth access.
+does not, make sure it is switched on and in range (and, on Windows,
+paired). macOS asks once for Bluetooth access.
 
 ## Toolbar
 
@@ -147,9 +144,15 @@ Indicator, Timing. The channel order is:
 | 18 | DT | Milliseconds between this sample's arrival and the previous one's |
 | 19 | TRIG | Trigger value, 0 when there is none (Unicorn Recorder calls this channel STATUS) |
 
-Channels that are excluded are left out and the others move up. The test
-signal input source is not available: gpype-rhino does not implement the
-command that switches the headset to it.
+Channels that are excluded are left out and the others move up.
+
+**Input source** chooses between the electrodes and the headset's
+internal rectangular **test signal**, which replaces the EEG on every
+channel; use it to check the recording chain without electrodes. It is a
+square wave of about 7.5 mV peak to peak at 1.95 Hz (a period of 0.512 s),
+the same on all eight channels; pick the ±5000µV scaling to see
+it whole. Filters and OSCAR change its shape in the filtered views, so
+look at it in the Raw view.
 
 ## Recording settings
 
@@ -203,19 +206,22 @@ The trigger input port must differ from the output ports.
 
 ## Device settings
 
-Shows the headset's name, the connection and the software versions. The
-firmware version and the digital outputs are not available: gpype-rhino
-does not implement those commands.
+Shows the headset's serial, its device and firmware versions (once
+acquisition has started), the connection and the software versions. The
+digital outputs are not available: g.tec's gtec-unicorn driver has no
+calls for them.
 
 **Bluetooth latency** (Timing) is how long a sample takes from the
 headset to this computer, 40 ms by default: g.tec's figure for the
 Unicorn Hybrid Black. Triggers are time-stamped when they arrive, and
-EEG samples arrive late by this delay and in bursts, so gpype-rhino
-stamps each sample with when it was acquired: its burst's arrival, less
-its place in the burst, less this latency. A trigger then lands on the
-sample acquired when it was sent; on a simulated headset that delivers
-bursts 40 ms late, within a sample (3 ms early on average, against 44 ms
-early without the correction). Your computer and Bluetooth adapter may
+EEG samples arrive late by this delay and in bursts, so Rhino Recorder
+stamps each sample with when it was acquired: its arrival, less the
+samples still waiting behind it in the driver (a sample early in a burst
+waits for the rest of it), less this latency. g.Pype's own HybridBlack
+source stamps samples on arrival and does not apply g.tec's 40 ms. A
+trigger then lands on the sample acquired when it was sent; on a
+simulated headset that delivers bursts 40 ms late, within about a sample
+(4 ms early on average, against 44 ms early without the correction). Your computer and Bluetooth adapter may
 have a different delay, which only an external reference can measure,
 e.g. a photodiode or an audio click wired into an EEG channel at a known
 trigger; enter what you measure here.
@@ -232,6 +238,7 @@ processing.
 Rhino Recorder is MIT licensed. g.Pype, which it runs on, is under the
 g.tec Non-Commercial License: free for private and educational use (for
 example academic research and teaching) with g.tec amplifiers, which the
-Unicorn Hybrid Black is. The status bar shows when g.Pype runs without
-a licence, in non-commercial use. Commercial use
-needs a licence from g.tec.
+Unicorn Hybrid Black is. The headset's driver, gtec-unicorn, is under an
+earlier version of that licence, to be used only as part of g.Pype. The
+status bar shows when g.Pype runs without a licence, in non-commercial
+use. Commercial use needs a licence from g.tec.

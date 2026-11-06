@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout,
-                               QLabel, QLineEdit, QMessageBox, QProgressDialog,
+                               QLabel, QMessageBox, QProgressDialog,
                                QPushButton, QVBoxLayout)
 
 from ..settings import Settings
@@ -21,68 +21,44 @@ FAILED_TEXT = ("Could not connect to the Unicorn. Make sure that the device "
 
 @dataclass
 class Choice:
+    #: The headset's serial, e.g. UN-2024.08.41; empty for the first found.
     serial: str
-    port: str
-    transport: str
     simulate: bool
 
 
-def paired_devices() -> list[tuple[str, str, str]]:
-    """(label, serial, port) of every paired headset found."""
-    found = []
-    if sys.platform.startswith("linux"):
-        # BlueZ's paired headsets, reached by name over an RFCOMM socket.
-        try:
-            from gprhino import find_headsets
-            found += [(name, name, "") for name in find_headsets()]
-        except Exception:  # noqa: BLE001
-            pass
-    elif sys.platform == "win32":
-        # Bluetooth COM ports, labelled with the headset paired on each.
-        try:
-            from gprhino import windows_bluetooth_ports
-            for port, _, name in windows_bluetooth_ports():
-                if not name or name.upper().startswith("UN-"):
-                    found.append((f"{name} ({port})" if name else port,
-                                  name, port))
-        except Exception:  # noqa: BLE001
-            pass
+def find_headsets(rescan: bool = False) -> list[str]:
+    """Serials of the headsets gtec-unicorn can open.
+
+    Windows lists the paired ones at once. Linux and macOS search the air
+    for devices named UN-..., paired or not, which takes several seconds
+    (the previous search's result is reused unless ``rescan``).
+
+    Raises:
+        RuntimeError: If gtec-unicorn cannot be loaded on this platform.
+    """
     try:
-        from gprhino import find_ports
-        ports = find_ports()
-    except Exception:  # noqa: BLE001
-        return found
-    for port in ports:
-        if any(port == listed for _, _, listed in found):
-            continue
-        name = port.rsplit("/", 1)[-1]
-        for prefix in ("cu.", "tty."):
-            if name.startswith(prefix):
-                name = name[len(prefix):]
-        if sys.platform == "darwin":
-            # The macOS bridge finds the headset by name; dots optional.
-            found.append((name, name, ""))
-        else:
-            found.append((port, "", port))
-    return found
+        import gtec_unicorn
+    except (ImportError, OSError) as error:
+        raise RuntimeError(f"gtec-unicorn could not be loaded: {error}") \
+            from error
+    return [str(s) for s in
+            gtec_unicorn.Amplifier.get_connected_devices(rescan=rescan)]
 
 
 def probe(choice: Choice) -> None:
-    """Connect to the headset and let it go again.
+    """Open the headset and let it go again.
 
     Raises:
-        ConnectionError: If it does not answer.
+        Exception: Whatever gtec-unicorn raises if it cannot be opened.
     """
     if choice.simulate:
         return
-    from gprhino import RhinoDevice
-    device = RhinoDevice(choice.serial or None, port=choice.port or None,
-                         transport=choice.transport or "auto")
-    device.start()
-    device.stop()
+    import gtec_unicorn
+    gtec_unicorn.Amplifier(choice.serial or None).close()
 
 
 class _Relay(QObject):
+    found = Signal(object)
     done = Signal(object)
 
 
@@ -98,20 +74,12 @@ class ConnectDialog(QDialog):
         self.devices = QComboBox()
         self.devices.setEditable(True)
         self.devices.setToolTip(
-            "The headset's Bluetooth name, e.g. UN-2024.08.41. Leave it "
-            "empty for the first paired headset.")
-        self.port = QLineEdit(settings.device.port)
-        self.port.setPlaceholderText(
-            "COM5" if sys.platform == "win32" else
-            "optional: /dev/rfcommN bound by hand"
-            if sys.platform.startswith("linux") else "not needed on macOS")
-        self.transport = QComboBox()
-        self.transport.addItems(["auto", "serial", "bluetooth", "bridge"])
-        self.transport.setCurrentText(settings.device.transport or "auto")
-        self._refresh()
-
-        refresh = QPushButton("Refresh")
-        refresh.clicked.connect(self._refresh)
+            "The headset's serial, e.g. UN-2024.08.41, as printed on it. "
+            "Leave it empty for the first headset found.")
+        self.status = QLabel()
+        self.status.setObjectName("Note")
+        self.refresh_button = QPushButton("Search again")
+        self.refresh_button.clicked.connect(lambda: self._search(rescan=True))
         self.open_button = QPushButton("Open")
         self.open_button.setObjectName("Primary")
         self.open_button.setDefault(True)
@@ -119,16 +87,17 @@ class ConnectDialog(QDialog):
         quit_button = QPushButton("Quit")
         quit_button.clicked.connect(self.reject)
 
-        intro = QLabel("Select the Unicorn Hybrid Black to open. Pair it in "
-                       "the system's Bluetooth settings first.")
+        pair = ("Pair it in Settings → Bluetooth & devices first."
+                if sys.platform == "win32" else
+                "Switch it on; it is found over Bluetooth by its name.")
+        intro = QLabel(f"Select the Unicorn Hybrid Black to open. {pair}")
         intro.setWordWrap(True)
         form = QFormLayout()
         device_row = QHBoxLayout()
         device_row.addWidget(self.devices, 1)
-        device_row.addWidget(refresh)
+        device_row.addWidget(self.refresh_button)
         form.addRow("Device:", device_row)
-        form.addRow("Serial port:", self.port)
-        form.addRow("Transport:", self.transport)
+        form.addRow("", self.status)
         buttons = QHBoxLayout()
         buttons.addStretch(1)
         buttons.addWidget(quit_button)
@@ -139,40 +108,60 @@ class ConnectDialog(QDialog):
         column.addLayout(buttons)
 
         self._relay = _Relay()
+        self._relay.found.connect(self._found)
         self._relay.done.connect(self._probed)
         self._progress: QProgressDialog | None = None
+        self._fill([])
+        self._search(rescan=False)
 
-    def _refresh(self) -> None:
+    def _fill(self, serials: list[str]) -> None:
         current = self.devices.currentText() or self.settings.device.serial
         self.devices.clear()
-        for label, serial, port in paired_devices():
-            self.devices.addItem(label, (serial, port))
-        self.devices.addItem(SIMULATED, (SIMULATED_SERIAL, ""))
+        for serial in serials:
+            self.devices.addItem(serial)
+        self.devices.addItem(SIMULATED)
         if current:
-            # A saved name also finds its "UN-... (COM5)" entry (Windows).
-            index = self.devices.findText(current,
-                                          Qt.MatchFlag.MatchStartsWith)
+            index = self.devices.findText(current)
             if index >= 0:
                 self.devices.setCurrentIndex(index)
             else:
                 self.devices.setEditText(current)
 
+    def _search(self, rescan: bool) -> None:
+        """Look for headsets in the background: on Linux and macOS a search
+        takes several seconds."""
+        self.refresh_button.setEnabled(False)
+        self.status.setText("Searching for headsets...")
+
+        def work():
+            try:
+                self._relay.found.emit(find_headsets(rescan))
+            except Exception as error:  # noqa: BLE001
+                self._relay.found.emit(error)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _found(self, result) -> None:
+        self.refresh_button.setEnabled(True)
+        if isinstance(result, Exception):
+            self.status.setText(f"Could not search: {result}")
+            return
+        self._fill(result)
+        self.status.setText(
+            f"Found {', '.join(result)}." if result else
+            "No headset found. Is it switched on and in range?")
+
     def current_choice(self) -> Choice:
         text = self.devices.currentText().strip()
-        index = self.devices.findText(text)
-        serial, port = (self.devices.itemData(index) if index >= 0
-                        else (text, ""))
         if text == SIMULATED:
-            return Choice(SIMULATED_SERIAL, "", "auto", True)
-        port = self.port.text().strip() or port
-        return Choice(serial, port, self.transport.currentText(), False)
+            return Choice(SIMULATED_SERIAL, True)
+        return Choice(text, False)
 
     def _open(self) -> None:
         choice = self.current_choice()
         self.open_button.setEnabled(False)
         self._progress = QProgressDialog(
-            f"Connecting to {choice.serial or choice.port or 'the Unicorn'}"
-            f"...", None, 0, 0, self)
+            f"Connecting to {choice.serial or 'the Unicorn'}...", None, 0, 0,
+            self)
         self._progress.setWindowTitle("Rhino Recorder")
         self._progress.setWindowModality(Qt.WindowModality.WindowModal)
         self._progress.setMinimumDuration(0)
@@ -202,6 +191,4 @@ class ConnectDialog(QDialog):
         self.choice = choice
         if not choice.simulate:
             self.settings.device.serial = choice.serial
-            self.settings.device.port = choice.port
-            self.settings.device.transport = choice.transport
         self.accept()

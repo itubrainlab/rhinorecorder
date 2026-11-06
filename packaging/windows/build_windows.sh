@@ -8,10 +8,11 @@
 # the tested library versions and PySide6 for the icon.
 #
 # The package carries its own Python (python-build-standalone's Windows
-# build, which uv downloads), RhinoRecorder and gpype-rhino. It does not
-# carry g.Pype: the g.tec Non-Commercial License forbids redistributing
-# g.Pype as a standalone executable or other bundled artefact. The first
-# launch installs g.Pype and the other pinned libraries from PyPI (see
+# build, which uv downloads), RhinoRecorder. It does not carry g.Pype or
+# g.tec's gtec-unicorn driver: their g.tec Non-Commercial Licenses forbid
+# redistributing them in a standalone executable or other bundled
+# artefact. The first launch installs them and the other pinned libraries
+# from PyPI (see
 # ../bootstrap.py).
 set -euo pipefail
 
@@ -19,7 +20,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 OUT="${OUT:-$ROOT/dist}"
 DEV_PY="$ROOT/.venv/bin/python"
-GPYPE_RHINO_URL="https://github.com/itubrainlab/gpype-rhino"
 PLATFORM="x86_64-pc-windows-msvc"
 
 [ -x "$DEV_PY" ] || { echo "Run pip install -e '.[test]' into .venv first." >&2; exit 1; }
@@ -28,19 +28,12 @@ VERSION="$("$DEV_PY" -c 'import rhinorecorder; print(rhinorecorder.__version__)'
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD)"
 git -C "$ROOT" diff --quiet HEAD -- src pyproject.toml packaging || COMMIT="$COMMIT-dirty"
 BUILD_ID="$VERSION-$COMMIT-windows-x86_64"
-GPYPE_RHINO_COMMIT="$("$DEV_PY" - <<'PY'
-import json, glob, sysconfig
-path = glob.glob(sysconfig.get_paths()["purelib"]
-                 + "/gpype_rhino-*.dist-info/direct_url.json")
-print(json.load(open(path[0]))["vcs_info"]["commit_id"] if path else "main")
-PY
-)"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 NAME="RhinoRecorder-$VERSION-windows-x86_64"
 DIR="$WORK/$NAME"
-echo "Building Rhino Recorder $BUILD_ID (gpype-rhino $GPYPE_RHINO_COMMIT)"
+echo "Building Rhino Recorder $BUILD_ID"
 
 # -- Python -------------------------------------------------------------------
 uv python install --quiet --install-dir "$WORK/py" cpython-3.12-windows-x86_64-none
@@ -50,20 +43,15 @@ PYTHON_HOME="$(find "$WORK/py" -maxdepth 1 -type d -name 'cpython-3.12.*-windows
 # -- wheels (pure Python, so built here for any platform) ---------------------
 mkdir -p "$WORK/wheels"
 uv build --quiet --wheel --out-dir "$WORK/wheels" "$ROOT"
-git clone --quiet "$GPYPE_RHINO_URL" "$WORK/gpype-rhino"
-git -C "$WORK/gpype-rhino" checkout --quiet "$GPYPE_RHINO_COMMIT"
-uv build --quiet --wheel --out-dir "$WORK/wheels" "$WORK/gpype-rhino"
 
 # -- pinned requirements, at the versions the tests ran with -----------------
-"$DEV_PY" - "$ROOT/pyproject.toml" "$WORK/gpype-rhino/pyproject.toml" \
-    > "$WORK/requirements.in" <<'PY'
+"$DEV_PY" - "$ROOT/pyproject.toml" > "$WORK/requirements.in" <<'PY'
 import sys, tomllib
 for path in sys.argv[1:]:
     for dep in tomllib.load(open(path, "rb"))["project"]["dependencies"]:
-        if not dep.replace("-", "_").startswith("gpype_rhino"):
-            print(dep)
+        print(dep)
 PY
-uv pip freeze --python "$DEV_PY" --exclude-editable | grep -v '^gpype-rhino' \
+uv pip freeze --python "$DEV_PY" --exclude-editable \
     > "$WORK/constraints.txt"
 uv pip compile --quiet --python-version 3.12 --python-platform "$PLATFORM" \
     --constraint "$WORK/constraints.txt" --no-header --no-annotate \

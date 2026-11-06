@@ -4,7 +4,6 @@ place."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox,
                                QFileDialog, QFormLayout, QGroupBox,
                                QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -24,10 +23,10 @@ LATENCY_NOTE = ("How long a sample takes from the headset to this "
 
 PAGES = ("Acquisition", "Recording", "Network", "Device")
 
-DRIVER_NOTE = ("gpype-rhino talks to the headset's Bluetooth serial "
-               "channel directly. It does not implement the commands for "
-               "the test signal, the digital outputs or the firmware "
-               "version, so those are not available here.")
+DRIVER_NOTE = ("g.tec's gtec-unicorn driver has no calls for the digital "
+               "outputs, so they are not available here.")
+
+INPUT_SOURCES = ("electrode", "test signal")
 
 
 def _group(column: QVBoxLayout, title: str) -> QFormLayout:
@@ -160,15 +159,14 @@ class SettingsView(QWidget):
         scroll, column = _page()
         form = _group(column, "Electrode input source")
         source = QComboBox()
-        source.addItems(["electrode", "test signal"])
+        source.addItems(INPUT_SOURCES)
         source.setFixedWidth(200)
-        model = source.model()
-        if isinstance(model, QStandardItemModel):
-            test = model.item(1)
-            test.setEnabled(False)
-            test.setToolTip(DRIVER_NOTE)
-        source.setToolTip("The test signal is not available over "
-                          "gpype-rhino.")
+        source.setCurrentText(acq.input_source)
+        source.setToolTip("electrode: the eight EEG electrodes. test "
+                          "signal: the headset's internal rectangular test "
+                          "signal on every EEG channel.")
+        source.currentTextChanged.connect(
+            lambda text: setattr(acq, "input_source", text))
         form.addRow("Input source:", source)
         form = _group(column, 
             "Include or exclude signals from data acquisition")
@@ -270,10 +268,13 @@ class SettingsView(QWidget):
         self.device_info.update(updates)
         info = self.device_info
         values = {
-            "Serial number": info.get("serial") or "(first paired headset)",
-            "Device": "Unicorn Hybrid Black",
+            "Serial number": info.get("serial") or "(first headset found)",
+            "Device": "Unicorn Hybrid Black" + (
+                f", version {info['device_version']}"
+                if info.get("device_version") else ""),
             "Connection": info.get("connection", ""),
-            "Firmware version": "not reported by gpype-rhino",
+            "Firmware version": info.get("firmware_version")
+            or "shown once acquisition has started",
             "Driver version": info.get("driver", ""),
             "g.Pype version": info.get("gpype", ""),
             "RhinoRecorder version": __version__,

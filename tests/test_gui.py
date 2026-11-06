@@ -38,7 +38,7 @@ def test_play_record_stop(app, settings, monkeypatch):
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: 0)
     monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: 0)
     monkeypatch.setattr(MainWindow, "_save_settings", lambda self: None)
-    window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+    window = MainWindow(settings, Choice(SIMULATED_SERIAL, True))
     window.show()
     try:
         window.play_button.click()
@@ -135,7 +135,7 @@ def test_power_spectrum(app, settings, monkeypatch):
     from rhinorecorder.ui.main_window import MainWindow
 
     monkeypatch.setattr(MainWindow, "_save_settings", lambda self: None)
-    window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+    window = MainWindow(settings, Choice(SIMULATED_SERIAL, True))
     window.show()
     try:
         assert window.spectrum_panel.isVisible()
@@ -185,7 +185,7 @@ def test_power_spectrum_follows_the_filter(app, settings, monkeypatch):
     monkeypatch.setattr(MainWindow, "_save_settings", lambda self: None)
     settings.display.filter = "< 20 Hz"
     settings.display.notch = "None"
-    window = MainWindow(settings, Choice(SIMULATED_SERIAL, "", "auto", True))
+    window = MainWindow(settings, Choice(SIMULATED_SERIAL, True))
     window.show()
     try:
         window.play_button.click()

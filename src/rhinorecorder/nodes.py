@@ -97,7 +97,7 @@ class RawEegCopy(gp.IONode):
 
 
 class UnicornLayout(gp.IONode):
-    """gpype-rhino's scan, plus an optional trigger channel, in Unicorn
+    """The headset's scan, plus an optional trigger channel, in Unicorn
     Recorder's channel order (see :mod:`rhinorecorder.layout`).
 
     With ``raw``, the EEG comes from the raw copy the source adds when
@@ -108,6 +108,9 @@ class UnicornLayout(gp.IONode):
     in milliseconds; with a frame size of 1 that is per sample, as in
     Unicorn Recorder. TRIG carries a trigger value on the sample where
     it arrived and zero elsewhere.
+
+    :attr:`invalid_scans` counts the scans the radio lost: the driver
+    fills each one in with its Validation Indicator at 0.
     """
 
     def __init__(self, raw: bool = False, **kwargs):
@@ -122,6 +125,7 @@ class UnicornLayout(gp.IONode):
         self._trigger: Optional[int] = None
         self._last_arrival: Optional[float] = None
         self._last_trigger = 0.0
+        self.invalid_scans = 0
 
     def setup(self, data, port_context_in):
         context = port_context_in[PORT_IN]
@@ -142,6 +146,7 @@ class UnicornLayout(gp.IONode):
             self._columns[layout.EEG] = layout.RHINO_RAW_EEG
         self._last_arrival = None
         self._last_trigger = 0.0
+        self.invalid_scans = 0
         out = super().setup(data, port_context_in)
         for ctx in out.values():
             describe(ctx, list(range(len(layout.CHANNELS))))
@@ -152,6 +157,9 @@ class UnicornLayout(gp.IONode):
         n = block.shape[0]
         out = np.zeros((n, len(layout.CHANNELS)), dtype=block.dtype)
         out[:, self._targets] = block[:, self._columns]
+        # Not the zeros OSCAR fills its delay with: they have no counter.
+        self.invalid_scans += int(np.count_nonzero(
+            (out[:, layout.VALID] == 0) & (out[:, layout.CNT] != 0)))
 
         now = time.perf_counter()
         if self._last_arrival is not None:

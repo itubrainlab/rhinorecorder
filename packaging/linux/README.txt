@@ -8,7 +8,8 @@ Needs
 - An x86_64 PC with glibc 2.34 or newer (Ubuntu 22.04, Debian 12,
   Fedora 35 or later). g.Pype has no build for ARM Linux.
 - An internet connection the first time: Rhino Recorder then downloads
-  g.Pype and the libraries it needs from PyPI (several hundred MB).
+  g.Pype, g.tec's gtec-unicorn driver and the other libraries it needs
+  from PyPI (several hundred MB).
 - Qt's usual desktop libraries. On Debian or Ubuntu, if the window does
   not open:  sudo apt install libxcb-cursor0 libegl1
 
@@ -25,15 +26,11 @@ Remove it with ./uninstall.sh (settings and recordings are kept).
 
 The headset
 -----------
-Pair it in the system's Bluetooth settings, or with bluetoothctl:
-
-    bluetoothctl
-    scan on
-    pair <headset Bluetooth address>
-    trust <headset Bluetooth address>
-
-Rhino Recorder then lists it by name in its device dialog and connects
-to it directly: no rfcomm bind, root or dialout group is needed.
+Switch it on. Rhino Recorder's device dialog finds the headsets in range
+by a Bluetooth search of a few seconds and lists them by serial, e.g.
+UN-2024.10.18; g.tec's gtec-unicorn driver connects to it directly, with
+no rfcomm bind. (Pairing it first, in the Bluetooth settings or with
+bluetoothctl, does no harm.)
 
 Triggers
 --------
@@ -46,4 +43,6 @@ Licence
 Rhino Recorder is MIT licensed (LICENSE). g.Pype, which the first launch
 installs from PyPI, is under the g.tec Non-Commercial License: free for
 private and educational use with a g.tec amplifier; commercial use needs
-a licence from g.tec. This package does not contain g.Pype.
+a licence from g.tec. The headset's driver, gtec-unicorn, also
+installed from PyPI, is under an earlier version of that licence, to be
+used only as part of g.Pype. This package contains neither.

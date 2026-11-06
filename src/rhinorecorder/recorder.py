@@ -59,6 +59,7 @@ class Graph:
     status: SweepTap
     loggers: dict[str, GatedLogger] = field(default_factory=dict)
     sinks: list = field(default_factory=list)
+    raw_layout: Optional[UnicornLayout] = None
 
 
 def make_source(settings: Settings, simulate: bool, oscar: bool):
@@ -66,15 +67,13 @@ def make_source(settings: Settings, simulate: bool, oscar: bool):
     common = dict(include_accel=True, include_gyro=True, include_aux=True,
                   frame_size=FRAME_SIZE, enable_oscar=oscar, name="rhino")
     from .sources import HeadsetSource, SimulatedSource
-    # The Bluetooth delay gpype-rhino takes off the EEG's time stamps, so
-    # triggers line up with the EEG they happened during.
+    # The Bluetooth delay taken off the EEG's time stamps, so triggers
+    # line up with the EEG they happened during.
     common["latency_ms"] = settings.device.latency_ms
+    common["test_signal"] = settings.acquisition.input_source == "test signal"
     if simulate:
         return SimulatedSource(**common)
-    return HeadsetSource(serial=settings.device.serial or None,
-                         port=settings.device.port or None,
-                         transport=settings.device.transport or "auto",
-                         **common)
+    return HeadsetSource(serial=settings.device.serial or None, **common)
 
 
 def _selector(indices: list[int]):
@@ -119,7 +118,7 @@ def build(settings: Settings, simulate: bool = False) -> Graph:
     scope = SweepTap(seconds=10, name="scope")
     p.connect(notch, scope)
 
-    graph = Graph(p, source, bandpass, notch, scope, status)
+    graph = Graph(p, source, bandpass, notch, scope, status, raw_layout=raw)
     channels = layout.selected(settings.acquisition.groups())
     rec = settings.recording
     for kind, upstream in (("raw", raw), ("processed", notch)):
@@ -348,10 +347,25 @@ class Recorder:
 
     @property
     def lost_scans(self) -> int:
-        """Samples lost in transmission since acquisition started."""
+        """Samples lost in transmission since acquisition started: those
+        the driver filled in, with their Validation Indicator at 0."""
+        graph = self.graph
+        layout_node = graph.raw_layout if graph else None
+        return int(layout_node.invalid_scans) if layout_node else 0
+
+    @property
+    def device_info(self) -> dict:
+        """What the open headset reports about itself; empty when none is
+        open."""
         graph = self.graph
         device = getattr(graph.source, "_device", None) if graph else None
-        return int(getattr(device, "lost_scans", 0) or 0)
+        info = {}
+        for key in ("serial_number", "firmware_version", "device_version"):
+            try:
+                info[key] = str(getattr(device, key))
+            except Exception:  # noqa: BLE001
+                pass
+        return info if device is not None else {}
 
     @property
     def marked(self) -> bool:
